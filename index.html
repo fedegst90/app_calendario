@@ -54,32 +54,34 @@
 
   <nav class="navbar navbar-dark bg-primary">
     <div class="container-fluid navbar-inner">
-      <span class="navbar-brand mb-0 h1">
-        <i class="bi bi-calendar3 me-2"></i>Mi Calendario
-      </span>
-      <span id="navbar-user" class="badge text-bg-light d-none"></span>
-      <div class="nav-actions d-flex gap-2 align-items-center">
-        <button id="btn-logout" class="btn btn-outline-light btn-sm d-none" title="Cerrar sesión">
-          <i class="bi bi-box-arrow-right"></i>
-        </button>
-        <div class="dropdown">
-          <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Tema">
-            <i class="bi bi-circle-half me-1"></i><span class="btn-label">Tema</span>
+      <div class="nav-row">
+        <span class="navbar-brand mb-0 h1">
+          <i class="bi bi-calendar3 me-2"></i>Mi Calendario
+        </span>
+        <div class="nav-actions d-flex gap-2 align-items-center">
+          <button id="btn-logout" class="btn btn-outline-light btn-sm d-none" title="Cerrar sesión">
+            <i class="bi bi-box-arrow-right"></i>
           </button>
-          <ul class="dropdown-menu dropdown-menu-start dropdown-menu-lg-end" id="theme-menu">
-            <li><span class="dropdown-header">Tema</span></li>
-          </ul>
+          <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Color">
+              <i class="bi bi-palette me-1"></i><span class="btn-label">Color</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-start dropdown-menu-lg-end" id="color-menu">
+              <li><span class="dropdown-header">Color del tema de la app</span></li>
+            </ul>
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Tema">
+              <i class="bi bi-circle-half me-1"></i><span class="btn-label">Tema</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-start dropdown-menu-lg-end" id="theme-menu">
+              <li><span class="dropdown-header">Tema</span></li>
+            </ul>
+          </div>
         </div>
-        <div class="dropdown">
-          <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Color">
-            <i class="bi bi-palette me-1"></i><span class="btn-label">Color</span>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-start dropdown-menu-lg-end" id="color-menu">
-            <li><span class="dropdown-header">Color del tema de la app</span></li>
-          </ul>
-        </div>
+        <span id="sync-status" class="badge ms-auto d-none d-inline-flex align-items-center gap-1"></span>
       </div>
-      <span id="sync-status" class="badge d-none d-inline-flex align-items-center gap-1"></span>
+      <span id="navbar-user" class="badge text-bg-light d-none"></span>
     </div>
   </nav>
 

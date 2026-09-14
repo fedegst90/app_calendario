@@ -74,17 +74,18 @@ body {
 .navbar-inner .navbar-brand {
   flex: 0 0 auto;
 }
-#navbar-user {
-  flex: 0 0 auto;
-  order: 2;
+.nav-row {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .nav-actions {
   flex: 0 0 auto;
   margin-left: auto;
 }
-#sync-status {
+#navbar-user {
   flex: 0 0 auto;
-  order: 3;
 }
 
 .spin {
@@ -279,16 +280,10 @@ body {
 
 @media (max-width: 991.98px) {
   #navbar-user {
-    order: 10;
     flex-basis: 100%;
-    width: auto;
   }
   .nav-actions {
     margin-left: 0;
-  }
-  #sync-status {
-    order: 2;
-    margin-left: auto;
   }
   .btn-label {
     display: none;

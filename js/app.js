@@ -129,7 +129,7 @@ const App = (() => {
     const el = document.getElementById('sync-status');
     if (!el) return;
     const map = {
-      pending: { icon: 'bi-arrow-repeat spin', text: 'Guardando…', cls: 'text-bg-secondary' },
+      pending: { icon: 'bi-arrow-repeat spin', text: 'Guardando…', cls: 'text-bg-danger' },
       ok: { icon: 'bi-cloud-check', text: 'Sincronizado', cls: 'text-bg-success' },
       offline: { icon: 'bi-cloud-slash', text: 'Sin conexión', cls: 'text-bg-danger' },
     };

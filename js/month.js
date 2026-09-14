@@ -82,9 +82,15 @@ const MonthView = (() => {
     document.getElementById('month-events').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-del]');
       if (!btn) return;
-      if (!confirm('¿Eliminar este evento?')) return;
-      app.state.events = app.state.events.filter((ev) => ev.id !== btn.dataset.del);
-      app.save(['events']);
+      const ev = app.state.events.find((ev) => ev.id === btn.dataset.del);
+      UI.confirmDelete({
+        title: 'Eliminar evento',
+        text: `¿Eliminar el evento "${ev ? ev.title : ''}"?`,
+        onConfirm: () => {
+          app.state.events = app.state.events.filter((ev) => ev.id !== btn.dataset.del);
+          app.save(['events']);
+        },
+      });
     });
   }
 

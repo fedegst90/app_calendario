@@ -1,4 +1,7 @@
 const UI = {
+  // Último handler de confirmación activo del modal genérico de borrado
+  _confirmHandler: null,
+
   esc(value) {
     const div = document.createElement('div');
     div.textContent = value == null ? '' : String(value);
@@ -40,6 +43,36 @@ const UI = {
       (c) => c && c.codigo && c.codigo.toLowerCase() === String(hex || '').toLowerCase()
     );
     return p ? p.nombre : String(hex || '');
+  },
+
+  // Modal genérico de confirmación de borrado.
+  // opts: { title, text, onConfirm }
+  confirmDelete(opts) {
+    const modalEl = document.getElementById('confirmDeleteModal');
+    const titleEl = document.getElementById('confirm-delete-title');
+    const textEl = document.getElementById('confirm-delete-text');
+    const ok = document.getElementById('confirm-delete-ok');
+    const onConfirm = opts && typeof opts.onConfirm === 'function' ? opts.onConfirm : null;
+
+    if (!modalEl) {
+      if (onConfirm) onConfirm();
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = (opts && opts.title) || 'Eliminar';
+    if (textEl) textEl.textContent = (opts && opts.text) || '¿Eliminar este elemento?';
+
+    if (ok) {
+      if (UI._confirmHandler) ok.removeEventListener('click', UI._confirmHandler);
+      UI._confirmHandler = () => {
+        const m = bootstrap.Modal.getInstance(modalEl);
+        if (m) m.hide();
+        if (onConfirm) onConfirm();
+      };
+      ok.addEventListener('click', UI._confirmHandler);
+    }
+
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
   },
 
   shade(hex, pct) {

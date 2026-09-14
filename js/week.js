@@ -61,6 +61,8 @@ const WeekView = (() => {
       const daySel = document.getElementById('week-day');
       document.getElementById('week-notify-day').value = daySel.value;
       document.getElementById('week-notify').value = '';
+      document.getElementById('week-description-edit').value = '';
+      updateEditDescCount();
       modal = new bootstrap.Modal(document.getElementById('weekModal'));
       modal.show();
     });
@@ -73,6 +75,7 @@ const WeekView = (() => {
       const type = document.getElementById('week-type').value;
       const notify = document.getElementById('week-notify').value || null;
       const notifyDay = notify ? +document.getElementById('week-notify-day').value : null;
+      const description = document.getElementById('week-description-edit').value.trim().slice(0, MAX_DESC);
 
       if (!subjectId) {
         alert('Primero agregá una materia en la pestaña Materias.');
@@ -93,9 +96,20 @@ const WeekView = (() => {
           item.type = type;
           item.notify = notify;
           item.notifyDay = notifyDay;
+          item.description = description;
         }
       } else {
-        app.state.weekly.push({ id: Store.uid(), subjectId, day, start, end, type, notify, notifyDay });
+        app.state.weekly.push({
+          id: Store.uid(),
+          subjectId,
+          day,
+          start,
+          end,
+          type,
+          notify,
+          notifyDay,
+          description,
+        });
       }
       if (notify) PushManager.ensurePermission();
       app.save(['weekly']);
@@ -113,13 +127,20 @@ const WeekView = (() => {
       openDetail(el.dataset.wid);
     });
 
-    document.getElementById('week-detail-save').addEventListener('click', saveDescription);
     document.getElementById('week-detail-delete').addEventListener('click', () => {
       if (!detailId) return;
-      app.state.weekly = app.state.weekly.filter((w) => w.id !== detailId);
-      detailId = null;
-      app.save(['weekly']);
-      if (detailModal) detailModal.hide();
+      const id = detailId;
+      const item = app.state.weekly.find((w) => w.id === id);
+      const sub = item ? app.getSubject(item.subjectId) : null;
+      UI.confirmDelete({
+        title: 'Eliminar horario',
+        text: `¿Eliminar el horario de ${UI.esc(sub ? sub.name : '')} el día ${DAYS[item && item.day] != null ? DAYS[item.day] : ''}?`,
+        onConfirm: () => {
+          app.state.weekly = app.state.weekly.filter((w) => w.id !== id);
+          detailId = null;
+          app.save(['weekly']);
+        },
+      });
     });
     document.getElementById('week-detail-edit').addEventListener('click', () => {
       if (!detailId) return;
@@ -129,22 +150,13 @@ const WeekView = (() => {
       startEdit(id);
     });
 
-    document.getElementById('week-description').addEventListener('input', updateDescCount);
+    document.getElementById('week-description-edit').addEventListener('input', updateEditDescCount);
   }
 
-  function updateDescCount() {
-    const ta = document.getElementById('week-description');
-    const c = document.getElementById('week-description-count');
+  function updateEditDescCount() {
+    const ta = document.getElementById('week-description-edit');
+    const c = document.getElementById('week-description-edit-count');
     if (ta && c) c.textContent = ta.value.length;
-  }
-
-  function saveDescription() {
-    if (!detailId) return;
-    const item = app.state.weekly.find((w) => w.id === detailId);
-    if (!item) return;
-    item.description = document.getElementById('week-description').value.trim().slice(0, MAX_DESC);
-    app.save(['weekly']);
-    if (detailModal) detailModal.hide();
   }
 
   function openDetail(id) {
@@ -167,7 +179,6 @@ const WeekView = (() => {
       </ul>`;
 
     document.getElementById('week-description').value = item.description || '';
-    updateDescCount();
     detailModal = new bootstrap.Modal(document.getElementById('weekDetailModal'));
     detailModal.show();
   }
@@ -185,6 +196,8 @@ const WeekView = (() => {
     document.getElementById('week-type').value = item.type;
     document.getElementById('week-notify').value = item.notify || '';
     document.getElementById('week-notify-day').value = item.notifyDay != null ? String(item.notifyDay) : String(item.day);
+    document.getElementById('week-description-edit').value = item.description || '';
+    updateEditDescCount();
     modal = new bootstrap.Modal(document.getElementById('weekModal'));
     modal.show();
   }

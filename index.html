@@ -297,6 +297,11 @@
                 <option value="consulta">Consulta</option>
               </select>
             </div>
+            <div class="mb-2">
+              <label class="form-label" for="week-description-edit">Descripción</label>
+              <textarea id="week-description-edit" class="form-control" rows="3" maxlength="300" placeholder="Notas, temas, aula, etc. (máx. 300 caracteres)"></textarea>
+              <div class="form-text text-end mb-0"><span id="week-description-edit-count">0</span>/300</div>
+            </div>
             <hr class="my-2">
             <div class="fw-semibold small mb-1"><i class="bi bi-bell me-1"></i>Recordatorio (opcional)</div>
             <div class="row g-2 mb-2">
@@ -331,8 +336,7 @@
           <form id="week-detail-form">
             <div class="mb-1">
               <label class="form-label" for="week-description">Descripción</label>
-              <textarea id="week-description" class="form-control" rows="4" maxlength="300" placeholder="Notas, temas, aula, etc. (máx. 300 caracteres)"></textarea>
-              <div class="form-text text-end mb-0"><span id="week-description-count">0</span>/300</div>
+              <textarea id="week-description" class="form-control" rows="4" readonly placeholder="Sin descripción"></textarea>
             </div>
           </form>
         </div>
@@ -344,30 +348,24 @@
           <button id="week-detail-edit" class="btn btn-primary">
             <i class="bi bi-pencil me-1"></i>Editar
           </button>
-          <button id="week-detail-save" class="btn btn-success">
-            <i class="bi bi-save me-1"></i>Guardar
-          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal fade" id="subjectDeleteModal" tabindex="-1">
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="bi bi-trash me-1 text-danger"></i>Eliminar materia</h5>
+          <h5 class="modal-title"><i class="bi bi-trash me-1 text-danger"></i><span id="confirm-delete-title">Eliminar</span></h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <p class="mb-2">¿Eliminar la materia <strong id="subject-delete-name"></strong>?</p>
-          <p class="text-muted small mb-0">
-            Se eliminarán también todos sus horarios semanales y eventos asociados.
-          </p>
+          <p class="mb-0" id="confirm-delete-text"></p>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button id="subject-delete-confirm" class="btn btn-danger">
+          <button id="confirm-delete-ok" class="btn btn-danger">
             <i class="bi bi-trash me-1"></i>Eliminar
           </button>
         </div>

@@ -116,6 +116,7 @@ const Store = (() => {
           type: str(w.type) || 'clase',
           notify: wNotif,
           notifyDay: wNotif ? (w.notifyDay != null ? num(w.notifyDay) : num(w.day)) : null,
+          description: str(w.description),
         };
       }),
       events: (state.events || []).map((ev) => {
@@ -243,6 +244,7 @@ const Store = (() => {
       type: w.type,
       notify: (w.notify && w.notifyDay != null) ? w.notify : null,
       notifyDay: (w.notify && w.notifyDay != null) ? w.notifyDay : null,
+      description: w.description || '',
     };
   }
 

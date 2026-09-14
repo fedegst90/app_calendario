@@ -2,6 +2,8 @@ const SubjectsView = (() => {
   let app;
   let selectedColor = '';
   let editingId = null;
+  let deleteModal = null;
+  let pendingDeleteId = null;
 
   function defaultColor() {
     const colors = app.state.colors || [];
@@ -59,19 +61,15 @@ const SubjectsView = (() => {
     document.getElementById('subject-list').addEventListener('click', (e) => {
       const delBtn = e.target.closest('[data-del]');
       if (delBtn) {
-        const id = delBtn.dataset.del;
-        if (!confirm('¿Eliminar esta materia y todos sus horarios y eventos?')) return;
-        app.state.subjects = app.state.subjects.filter((s) => s.id !== id);
-        app.state.weekly = app.state.weekly.filter((w) => w.subjectId !== id);
-        app.state.events = app.state.events.filter((ev) => ev.subjectId !== id);
-        app.save(['subjects', 'weekly', 'events']);
-        if (editingId === id) cancelEdit();
+        openDeleteModal(delBtn.dataset.del);
         return;
       }
 
       const editBtn = e.target.closest('[data-edit]');
       if (editBtn) startEdit(editBtn.dataset.edit);
     });
+
+    document.getElementById('subject-delete-confirm').addEventListener('click', confirmDelete);
 
     document.getElementById('subject-cancel').addEventListener('click', () => {
       cancelEdit();
@@ -80,6 +78,26 @@ const SubjectsView = (() => {
       selectedColor = defaultColor();
       renderColorMenu();
     });
+  }
+
+  function openDeleteModal(id) {
+    pendingDeleteId = id;
+    const sub = app.state.subjects.find((s) => s.id === id);
+    document.getElementById('subject-delete-name').textContent = sub ? sub.name : '';
+    deleteModal = new bootstrap.Modal(document.getElementById('subjectDeleteModal'));
+    deleteModal.show();
+  }
+
+  function confirmDelete() {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    pendingDeleteId = null;
+    app.state.subjects = app.state.subjects.filter((s) => s.id !== id);
+    app.state.weekly = app.state.weekly.filter((w) => w.subjectId !== id);
+    app.state.events = app.state.events.filter((ev) => ev.subjectId !== id);
+    app.save(['subjects', 'weekly', 'events']);
+    if (editingId === id) cancelEdit();
+    if (deleteModal) deleteModal.hide();
   }
 
   function startEdit(id) {

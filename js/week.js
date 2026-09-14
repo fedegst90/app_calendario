@@ -3,9 +3,13 @@ const WeekView = (() => {
   const HOUR_END = 22;
   const HOUR_PX = 56;
   const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const MAX_DESC = 300;
 
   let app;
   let modal = null;
+  let detailModal = null;
+  let detailId = null;
+  let editingId = null;
 
   function init(a) {
     app = a;
@@ -51,6 +55,8 @@ const WeekView = (() => {
         alert('Primero agregá una materia en la pestaña Materias.');
         return;
       }
+      editingId = null;
+      document.getElementById('week-modal-title').textContent = 'Nuevo horario semanal';
       fillSubjectSelect();
       const daySel = document.getElementById('week-day');
       document.getElementById('week-notify-day').value = daySel.value;
@@ -76,22 +82,111 @@ const WeekView = (() => {
         alert('La hora de fin debe ser mayor a la de inicio.');
         return;
       }
-      app.state.weekly.push({ id: Store.uid(), subjectId, day, start, end, type, notify, notifyDay });
+
+      if (editingId) {
+        const item = app.state.weekly.find((w) => w.id === editingId);
+        if (item) {
+          item.subjectId = subjectId;
+          item.day = day;
+          item.start = start;
+          item.end = end;
+          item.type = type;
+          item.notify = notify;
+          item.notifyDay = notifyDay;
+        }
+      } else {
+        app.state.weekly.push({ id: Store.uid(), subjectId, day, start, end, type, notify, notifyDay });
+      }
       if (notify) PushManager.ensurePermission();
       app.save(['weekly']);
       if (modal) modal.hide();
       render();
     });
 
+    document.getElementById('weekModal').addEventListener('hidden.bs.modal', () => {
+      editingId = null;
+    });
+
     document.getElementById('week-grid').addEventListener('click', (e) => {
       const el = e.target.closest('[data-wid]');
       if (!el) return;
-      const item = app.state.weekly.find((w) => w.id === el.dataset.wid);
-      if (item && confirm(`¿Eliminar ${TYPE_LABEL[item.type] || 'bloque'} de este horario?`)) {
-        app.state.weekly = app.state.weekly.filter((w) => w.id !== item.id);
-        app.save(['weekly']);
-      }
+      openDetail(el.dataset.wid);
     });
+
+    document.getElementById('week-detail-save').addEventListener('click', saveDescription);
+    document.getElementById('week-detail-delete').addEventListener('click', () => {
+      if (!detailId) return;
+      app.state.weekly = app.state.weekly.filter((w) => w.id !== detailId);
+      detailId = null;
+      app.save(['weekly']);
+      if (detailModal) detailModal.hide();
+    });
+    document.getElementById('week-detail-edit').addEventListener('click', () => {
+      if (!detailId) return;
+      const id = detailId;
+      if (detailModal) detailModal.hide();
+      detailId = null;
+      startEdit(id);
+    });
+
+    document.getElementById('week-description').addEventListener('input', updateDescCount);
+  }
+
+  function updateDescCount() {
+    const ta = document.getElementById('week-description');
+    const c = document.getElementById('week-description-count');
+    if (ta && c) c.textContent = ta.value.length;
+  }
+
+  function saveDescription() {
+    if (!detailId) return;
+    const item = app.state.weekly.find((w) => w.id === detailId);
+    if (!item) return;
+    item.description = document.getElementById('week-description').value.trim().slice(0, MAX_DESC);
+    app.save(['weekly']);
+    if (detailModal) detailModal.hide();
+  }
+
+  function openDetail(id) {
+    const item = app.state.weekly.find((w) => w.id === id);
+    if (!item) return;
+    detailId = id;
+
+    const sub = app.getSubject(item.subjectId);
+    const info = document.getElementById('week-detail-info');
+    info.innerHTML = `
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="subject-dot" style="background:${sub ? sub.color : '#adb5bd'}"></span>
+        <strong>${UI.esc(sub ? sub.name : 'Sin materia')}</strong>
+      </div>
+      <ul class="list-unstyled mb-0">
+        <li><i class="bi bi-calendar-week me-1"></i>Día: ${DAYS[item.day]}</li>
+        <li><i class="bi bi-clock me-1"></i>Horario: ${UI.pad(item.start)}:00 - ${UI.pad(item.end)}:00</li>
+        <li><i class="bi bi-tag me-1"></i>Tipo: ${TYPE_LABEL[item.type] || item.type}</li>
+        ${item.notify ? `<li><i class="bi bi-bell me-1"></i>Recordatorio: ${item.notifyDay != null ? DAYS[item.notifyDay] : DAYS[item.day]} ${UI.esc(item.notify)}</li>` : ''}
+      </ul>`;
+
+    document.getElementById('week-description').value = item.description || '';
+    updateDescCount();
+    detailModal = new bootstrap.Modal(document.getElementById('weekDetailModal'));
+    detailModal.show();
+  }
+
+  function startEdit(id) {
+    const item = app.state.weekly.find((w) => w.id === id);
+    if (!item) return;
+    editingId = id;
+    document.getElementById('week-modal-title').textContent = 'Editar horario';
+    fillSubjectSelect();
+    document.getElementById('week-subject').value = item.subjectId;
+    document.getElementById('week-day').value = String(item.day);
+    document.getElementById('week-start').value = String(item.start);
+    document.getElementById('week-end').value = String(item.end);
+    document.getElementById('week-type').value = item.type;
+    document.getElementById('week-notify').value = item.notify || '';
+    document.getElementById('week-notify-day').value = item.notifyDay != null ? String(item.notifyDay) : String(item.day);
+    modal = new bootstrap.Modal(document.getElementById('weekModal'));
+    modal.show();
   }
 
   // Asigna a cada bloque una columna para que los que coinciden en hora
@@ -150,6 +245,7 @@ const WeekView = (() => {
              style="top:${top}px;height:${height}px;left:calc(${left}% + 2px);width:calc(${pct}% - 4px);background:${color};color:${UI.contrast(color)}">
           <div class="wk-block-title">${UI.esc(name)}</div>
           <div class="wk-block-type">${TYPE_LABEL[w.type] || w.type} · ${UI.pad(w.start)}:00-${UI.pad(w.end)}:00</div>
+          ${w.description ? `<div class="wk-block-desc" title="${UI.esc(w.description)}">${UI.esc(w.description)}</div>` : ''}
           ${w.notify ? `<div class="wk-block-notify"><i class="bi bi-bell-fill"></i> ${DAYS[w.notifyDay] || DAYS[w.day]} ${UI.esc(w.notify)}</div>` : ''}
         </div>`;
       })

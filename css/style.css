@@ -232,6 +232,13 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.wk-block .wk-block-desc {
+  opacity: 0.85;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ---- Mes ---- */
 .month-grid {

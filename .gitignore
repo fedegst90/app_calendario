@@ -1,0 +1,30 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editores / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Entorno / secretos
+.env
+.env.local
+*.local
+
+# Python (servidor local)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs
+*.log

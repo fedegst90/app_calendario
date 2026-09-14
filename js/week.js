@@ -5,6 +5,7 @@ const WeekView = (() => {
   const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   let app;
+  let modal = null;
 
   function init(a) {
     app = a;
@@ -32,13 +33,34 @@ const WeekView = (() => {
     end.innerHTML = opts;
   }
 
+  function fillSubjectSelect() {
+    const sel = document.getElementById('week-subject');
+    const opts = app.state.subjects
+      .map((s) => `<option value="${s.id}">${UI.esc(s.name)}</option>`)
+      .join('');
+    sel.innerHTML = opts || '<option value="">Sin materias</option>';
+    sel.disabled = !app.state.subjects.length;
+  }
+
   function bindEvents() {
     document.getElementById('week-add').addEventListener('click', () => {
+      if (!app.state.subjects.length) {
+        alert('Primero agregá una materia en la pestaña Materias.');
+        return;
+      }
+      fillSubjectSelect();
+      document.getElementById('week-notify').value = '';
+      modal = new bootstrap.Modal(document.getElementById('weekModal'));
+      modal.show();
+    });
+
+    document.getElementById('week-save').addEventListener('click', () => {
       const subjectId = document.getElementById('week-subject').value;
       const day = +document.getElementById('week-day').value;
       const start = +document.getElementById('week-start').value;
       const end = +document.getElementById('week-end').value;
       const type = document.getElementById('week-type').value;
+      const notify = document.getElementById('week-notify').value || null;
 
       if (!subjectId) {
         alert('Primero agregá una materia en la pestaña Materias.');
@@ -48,8 +70,11 @@ const WeekView = (() => {
         alert('La hora de fin debe ser mayor a la de inicio.');
         return;
       }
-      app.state.weekly.push({ id: Store.uid(), subjectId, day, start, end, type });
+      app.state.weekly.push({ id: Store.uid(), subjectId, day, start, end, type, notify });
+      if (notify) PushManager.ensurePermission();
       app.save(['weekly']);
+      if (modal) modal.hide();
+      render();
     });
 
     document.getElementById('week-grid').addEventListener('click', (e) => {
@@ -119,22 +144,14 @@ const WeekView = (() => {
              style="top:${top}px;height:${height}px;left:calc(${left}% + 2px);width:calc(${pct}% - 4px);background:${color};color:${UI.contrast(color)}">
           <div class="wk-block-title">${UI.esc(name)}</div>
           <div class="wk-block-type">${TYPE_LABEL[w.type] || w.type} · ${UI.pad(w.start)}:00-${UI.pad(w.end)}:00</div>
+          ${w.notify ? `<div class="wk-block-notify"><i class="bi bi-bell-fill"></i> ${UI.esc(w.notify)}</div>` : ''}
         </div>`;
       })
       .join('');
   }
 
   function render() {
-    const sel = document.getElementById('week-subject');
-    const prev = sel.value;
-    const opts = app.state.subjects
-      .map(
-        (s) =>
-          `<option value="${s.id}"${s.id === prev ? ' selected' : ''}>${UI.esc(s.name)}</option>`
-      )
-      .join('');
-    sel.innerHTML = opts || '<option value="">Sin materias</option>';
-    sel.disabled = !app.state.subjects.length;
+    fillSubjectSelect();
 
     const numRows = HOUR_END - HOUR_START + 1;
     const grid = document.getElementById('week-grid');

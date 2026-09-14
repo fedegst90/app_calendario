@@ -59,13 +59,11 @@ const Store = (() => {
     return isFinite(n) ? n : 0;
   }
 
-  // RTDB almacena los arrays como objetos con claves numéricas; esto los reconvierte
+  // RTDB almacena los arrays como objetos con claves numéricas (los guardamos
+  // como mapas con la id de cada item); esto los reconvierte a arrays.
   function toArray(v) {
     if (Array.isArray(v)) return v;
-    if (v && typeof v === 'object') {
-      const keys = Object.keys(v).filter((k) => /^\d+$/.test(k)).sort((a, b) => +a - +b);
-      if (keys.length && keys.length === Object.keys(v).length) return keys.map((k) => v[k]);
-    }
+    if (v && typeof v === 'object') return Object.keys(v).map((k) => v[k]);
     return v;
   }
 
@@ -114,6 +112,7 @@ const Store = (() => {
         start: num(w.start),
         end: num(w.end),
         type: str(w.type) || 'clase',
+        notify: str(w.notify) || null,
       })),
       events: (state.events || []).map((ev) => ({
         id: str(ev.id),
@@ -121,6 +120,7 @@ const Store = (() => {
         subjectId: str(ev.subjectId) || null,
         type: str(ev.type) || 'evento',
         dates: parseDates(ev.dates),
+        notify: str(ev.notify) || null,
       })),
       colors:
         state.colors && state.colors.length
@@ -233,6 +233,7 @@ const Store = (() => {
       start: w.start,
       end: w.end,
       type: w.type,
+      notify: w.notify || null,
     };
   }
 
@@ -243,6 +244,7 @@ const Store = (() => {
       subjectId: ev.subjectId || '',
       type: ev.type,
       dates: ev.dates || [],
+      notify: ev.notify || null,
     };
   }
 
@@ -321,7 +323,9 @@ const Store = (() => {
   }
 
   function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    // Prefijo 'id' para que la clave nunca sea puramente numérica (RTDB la
+    // reinterpretaría como un índice de array y rompería los datos).
+    return 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
   // ------------------------------------------------ notificaciones push (FCM)

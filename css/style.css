@@ -102,6 +102,22 @@ body {
   color: var(--calendar-active);
   border-color: #fff;
 }
+.wk-block-notify {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font-size: 0.65rem;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 0 4px;
+}
+[data-bs-theme="dark"] .wk-block-notify {
+  background: rgba(0, 0, 0, 0.3);
+}
 .palette-dots {
   display: inline-flex;
   gap: 2px;

@@ -4,35 +4,41 @@ const PushManager = (() => {
   const VAPID_KEY = 'BKzJ0hHigttR33EP4ODl914a6nz9oDCO9TFm8FY3-cbl4LiLAA_zVSPQKVymcATcf4up1TkxeMf7mFML4pt7770';
 
   const SW_PATH = 'firebase-messaging-sw.js';
+  const TICK_MS = 30000;
+  const WEEK_MS = 7 * 24 * 3600 * 1000;
 
   let messaging = null;
   let swReg = null;
   let enabled = false;
   let token = null;
+  let tickId = null;
 
   const icon =
     'data:image/svg+xml,' +
     encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📅</text></svg>`);
 
+  // --------------------------------------------------- FCM (push externo)
+
   function init() {
     bindToggle();
-    if (typeof firebase === 'undefined' || !firebase.messaging) return;
-    try {
-      messaging = firebase.messaging();
-    } catch (err) {
-      console.warn('Firebase Messaging no disponible:', err.message);
-      return;
-    }
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register(SW_PATH)
         .then((reg) => {
           swReg = reg;
-          messaging.onMessage(handleForeground);
+          if (messaging) messaging.onMessage(handleForeground);
         })
         .catch((err) => console.warn('No se pudo registrar el service worker:', err.message));
     }
+    if (typeof firebase !== 'undefined' && firebase.messaging) {
+      try {
+        messaging = firebase.messaging();
+      } catch (err) {
+        console.warn('Firebase Messaging no disponible:', err.message);
+      }
+    }
     syncState();
+    schedule();
   }
 
   function bindToggle() {
@@ -104,14 +110,108 @@ const PushManager = (() => {
 
   function handleForeground(payload) {
     const n = (payload && payload.notification) || {};
-    const title = n.title || 'Mi Calendario';
-    const options = { body: n.body || '', icon: n.icon || icon };
+    notifyUser(n.title || 'Mi Calendario', n.body || '');
+  }
+
+  function notifyUser(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const options = { body: body || '', icon };
     if (swReg && 'showNotification' in swReg) {
       swReg.showNotification(title, options);
-    } else if ('Notification' in window && Notification.permission === 'granted') {
+    } else {
       new Notification(title, options);
     }
   }
 
-  return { init };
+  // Pide el permiso de notificaciones si hace falta (para recordatorios locales).
+  async function ensurePermission() {
+    if (!('Notification' in window)) {
+      alert('Este navegador no soporta notificaciones.');
+      return false;
+    }
+    if (Notification.permission === 'denied') {
+      alert('Notificaciones bloqueadas. Habilitalas desde la configuración del navegador.');
+      return false;
+    }
+    if (Notification.permission === 'granted') return true;
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') alert('Permiso denegado: no se mostrarán recordatorios.');
+    return perm === 'granted';
+  }
+
+  // -------------------------------------------- recordatorios programados
+
+  function schedule() {
+    if (tickId) return;
+    tick();
+    tickId = setInterval(tick, TICK_MS);
+  }
+
+  function parseTime(hm) {
+    if (!hm) return null;
+    const parts = String(hm).split(':');
+    if (parts.length !== 2) return null;
+    const h = +parts[0];
+    const m = +parts[1];
+    if (!isFinite(h) || !isFinite(m)) return null;
+    return { h, m };
+  }
+
+  // Próxima ocurrencia (estrictamente futura) de un día (0=Lu .. 6=Do) a las "HH:MM"
+  function nextWeeklyMs(day, hm) {
+    const p = parseTime(hm);
+    if (!p) return null;
+    const now = new Date();
+    const dayNow = (now.getDay() + 6) % 7;
+    let diff = day - dayNow;
+    if (diff < 0) diff += 7;
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    d.setDate(d.getDate() + diff);
+    d.setHours(p.h, p.m, 0, 0);
+    if (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 7);
+    return d.getTime();
+  }
+
+  // Timestamp de un evento puntual "YYYY-MM-DD" a las "HH:MM" (hora local)
+  function eventAtMs(iso, hm) {
+    const p = parseTime(hm);
+    if (!p || !iso) return null;
+    const parts = String(iso).split('-');
+    if (parts.length !== 3) return null;
+    const d = new Date(+parts[0], +parts[1] - 1, +parts[2], p.h, p.m, 0, 0);
+    return isFinite(d.getTime()) ? d.getTime() : null;
+  }
+
+  function tick() {
+    const state = App.state;
+    if (!state) return;
+    const now = Date.now();
+
+    // Horarios de la semana (se repiten cada semana)
+    (state.weekly || []).forEach((w) => {
+      if (!w.notify) return;
+      const at = nextWeeklyMs(w.day, w.notify);
+      if (at == null) return;
+      const prev = at - WEEK_MS;
+      if (prev <= now + 2000 && prev >= now - TICK_MS - 2000) {
+        const sub = App.getSubject(w.subjectId);
+        const subName = sub ? sub.name : 'Sin materia';
+        notifyUser(subName, `Tenés ${TYPE_LABEL[w.type] || w.type} a las ${UI.pad(w.start)}:00.`);
+      }
+    });
+
+    // Eventos del mes (una sola vez, en la fecha indicada)
+    (state.events || []).forEach((ev) => {
+      if (!ev.notify) return;
+      (ev.dates || []).forEach((iso) => {
+        const at = eventAtMs(iso, ev.notify);
+        if (at == null) return;
+        if (at <= now + 2000 && at >= now - TICK_MS - 2000) {
+          notifyUser(ev.title, `${UI.fmtDate(iso)} a las ${ev.notify}.`);
+        }
+      });
+    });
+  }
+
+  return { init, schedule, ensurePermission };
 })();

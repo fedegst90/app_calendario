@@ -80,6 +80,7 @@ const App = (() => {
     SubjectsView.render();
     WeekView.render();
     MonthView.render();
+    PushManager.schedule();
   }
 
   function getSubject(id) {

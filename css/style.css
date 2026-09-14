@@ -299,6 +299,18 @@ body {
   font-style: italic;
 }
 
+.nav-extra-wrap {
+  display: block;
+}
+#nav-hamburger {
+  display: none;
+}
+#nav-extra {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 @media (max-width: 991.98px) {
   #navbar-user {
     flex-basis: 100%;
@@ -312,6 +324,93 @@ body {
   .navbar .dropdown-toggle {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+  }
+
+  /* Botón hamburguesa: esconde Color / Tema / Notificaciones / Instalar */
+  .nav-extra-wrap {
+    position: relative;
+  }
+  #nav-hamburger {
+    display: inline-flex;
+    align-items: center;
+    color: #fff;
+  }
+  #nav-extra {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    min-width: 220px;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--calendar-border);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.18);
+    z-index: 1200;
+  }
+  #nav-extra.open {
+    display: flex;
+  }
+  #nav-extra .btn {
+    text-align: left;
+    justify-content: flex-start;
+    width: 100%;
+  }
+  #nav-extra .dropdown {
+    width: 100%;
+  }
+  #nav-extra .btn-label {
+    display: inline;
+  }
+  #nav-extra .dropdown-menu {
+    inset-inline: auto 0;
+  }
+
+  /* Barra inferior tipo Android para Materias / Semana / Mes */
+  body {
+    padding-bottom: calc(66px + env(safe-area-inset-bottom));
+  }
+  .tabs-app {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    display: flex;
+    justify-content: space-around;
+    gap: 0;
+    margin: 0;
+    padding: 0.35rem 0.35rem calc(0.35rem + env(safe-area-inset-bottom));
+    background: var(--calendar-card);
+    border-top: 1px solid var(--calendar-border);
+  }
+  .tabs-app .nav-item {
+    flex: 1 1 0;
+  }
+  .tabs-app .nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.35rem 0.25rem;
+    border-radius: 0.6rem;
+    font-size: 0.68rem;
+    color: var(--calendar-muted);
+    background: transparent;
+  }
+  .tabs-app .nav-link i {
+    font-size: 1.25rem;
+    line-height: 1;
+    margin-inline: 0 !important;
+  }
+  .tabs-app .nav-link.active,
+  .tabs-app .nav-link:hover {
+    color: var(--calendar-active);
+    background: rgba(var(--calendar-active-rgb), 0.12);
   }
 }
 

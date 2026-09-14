@@ -67,31 +67,38 @@
           <i class="bi bi-calendar3 me-2"></i>Mi Calendario
         </span>
         <div class="nav-actions d-flex gap-2 align-items-center">
-          <button id="btn-notifications" class="btn btn-outline-light btn-sm d-none" title="Notificaciones">
-            <i class="bi bi-bell" id="btn-notifications-icon"></i><span class="btn-label">Notificaciones</span>
-          </button>
-          <button id="btn-install" class="btn btn-outline-light btn-sm d-none" title="Instalar app">
-            <i class="bi bi-download"></i><span class="btn-label">Instalar</span>
-          </button>
+          <div class="nav-extra-wrap">
+            <button id="nav-hamburger" class="navbar-toggler" type="button" aria-label="Más opciones" title="Más opciones">
+              <i class="bi bi-list fs-4"></i>
+            </button>
+            <div id="nav-extra" class="nav-extra">
+              <button id="btn-notifications" class="btn btn-outline-light btn-sm d-none" title="Notificaciones">
+                <i class="bi bi-bell" id="btn-notifications-icon"></i><span class="btn-label">Notificaciones</span>
+              </button>
+              <button id="btn-install" class="btn btn-outline-light btn-sm d-none" title="Instalar app">
+                <i class="bi bi-download"></i><span class="btn-label">Instalar</span>
+              </button>
+              <div class="dropdown">
+                <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Color">
+                  <i class="bi bi-palette"></i><span class="btn-label">Color</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="color-menu">
+                  <li><span class="dropdown-header">Color del tema de la app</span></li>
+                </ul>
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Tema">
+                  <i class="bi bi-circle-half"></i><span class="btn-label">Tema</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" id="theme-menu">
+                  <li><span class="dropdown-header">Tema</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
           <button id="btn-logout" class="btn btn-outline-light btn-sm d-none" title="Cerrar sesión">
             <i class="bi bi-box-arrow-right"></i>
           </button>
-          <div class="dropdown">
-            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Color">
-              <i class="bi bi-palette me-1"></i><span class="btn-label">Color</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-start dropdown-menu-lg-end" id="color-menu">
-              <li><span class="dropdown-header">Color del tema de la app</span></li>
-            </ul>
-          </div>
-          <div class="dropdown">
-            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Tema">
-              <i class="bi bi-circle-half me-1"></i><span class="btn-label">Tema</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-start dropdown-menu-lg-end" id="theme-menu">
-              <li><span class="dropdown-header">Tema</span></li>
-            </ul>
-          </div>
         </div>
         <span id="sync-status" class="badge ms-auto d-none d-inline-flex align-items-center gap-1"></span>
       </div>
@@ -100,7 +107,7 @@
   </nav>
 
   <div class="container-fluid py-3">
-    <ul class="nav nav-pills justify-content-center gap-2 mb-4">
+    <ul class="nav nav-pills tabs-app justify-content-center gap-2 mb-4">
       <li class="nav-item">
         <button class="nav-link active" data-tab="subjects"><i class="bi bi-book me-1"></i>Materias</button>
       </li>

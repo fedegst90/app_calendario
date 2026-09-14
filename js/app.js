@@ -6,6 +6,7 @@ const App = (() => {
     if (started) return;
     started = true;
     PwaInstall.init();
+    bindHamburger();
     bindTabs();
     bindAuthButtons();
     Store.onStatus = (kind) => setSyncStatus(kind);
@@ -60,7 +61,21 @@ const App = (() => {
     if (btnLogout) btnLogout.addEventListener('click', () => Store.signOut().catch(() => {}));
   }
 
-  function bindTabs() {
+  function bindHamburger() {
+  const btn = document.getElementById('nav-hamburger');
+  const extra = document.getElementById('nav-extra');
+  if (!btn || !extra) return;
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    extra.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#nav-extra-wrap')) extra.classList.remove('open');
+  });
+}
+
+function bindTabs() {
     document.querySelectorAll('[data-tab]').forEach((btn) => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });

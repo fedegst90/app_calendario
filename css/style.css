@@ -380,6 +380,13 @@ body {
     text-align: left;
     justify-content: flex-start;
     width: 100%;
+    color: var(--bs-body-color);
+    border-color: var(--calendar-border);
+  }
+  #nav-extra .btn:hover,
+  #nav-extra .btn:focus {
+    color: var(--bs-body-color);
+    background: rgba(var(--calendar-active-rgb), 0.12);
   }
   #nav-extra .dropdown {
     width: 100%;

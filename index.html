@@ -63,14 +63,14 @@
   <nav class="navbar navbar-dark bg-primary">
     <div class="container-fluid navbar-inner">
       <div class="nav-row">
+        <button id="nav-hamburger" class="navbar-toggler" type="button" aria-label="Más opciones" title="Más opciones">
+          <i class="bi bi-three-dots-vertical fs-4"></i>
+        </button>
         <span class="navbar-brand mb-0 h1">
           <i class="bi bi-calendar3 me-2"></i>Mi Calendario
         </span>
         <div class="nav-actions d-flex gap-2 align-items-center">
           <div class="nav-extra-wrap">
-            <button id="nav-hamburger" class="navbar-toggler" type="button" aria-label="Más opciones" title="Más opciones">
-              <i class="bi bi-three-dots-vertical fs-4"></i>
-            </button>
             <div id="nav-extra" class="nav-extra">
               <button id="btn-notifications" class="btn btn-outline-light btn-sm d-none" title="Notificaciones">
                 <i class="bi bi-bell" id="btn-notifications-icon"></i><span class="btn-label">Notificaciones</span>
@@ -94,11 +94,11 @@
                   <li><span class="dropdown-header">Tema</span></li>
                 </ul>
               </div>
+              <button id="btn-logout" class="btn btn-outline-light btn-sm d-none" title="Cerrar sesión">
+                <i class="bi bi-box-arrow-right"></i><span class="btn-label">Cerrar sesión</span>
+              </button>
             </div>
           </div>
-          <button id="btn-logout" class="btn btn-outline-light btn-sm d-none" title="Cerrar sesión">
-            <i class="bi bi-box-arrow-right"></i>
-          </button>
         </div>
         <span id="sync-status" class="badge ms-auto d-none d-inline-flex align-items-center gap-1"></span>
       </div>

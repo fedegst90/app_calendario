@@ -84,16 +84,24 @@ const App = (() => {
     if (e.key === 'Escape' || e.key === 'Esc') close();
   });
 
-  // Cierra si se toca fuera del botón y del panel
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('#nav-extra-wrap')) close();
+  // En móvil, los clics dentro del panel lateral no lo cierran:
+  // solo se cierra con ⋯, backdrop, ESC o tocando afuera.
+  const isMobile = () => window.matchMedia('(max-width: 991.98px)').matches;
+  extra.addEventListener('click', (e) => {
+    if (e.target.closest('.dropdown-menu')) return;
+    if (!isMobile()) return;
+    e.stopPropagation();
+    extra.querySelectorAll('.dropdown.show').forEach((d) => {
+      if (!d.contains(e.target)) {
+        const t = d.querySelector('.dropdown-toggle');
+        if (t && window.bootstrap) bootstrap.Dropdown.getOrCreateInstance(t).hide();
+      }
+    });
   });
 
-  // Al elegir color/tema dentro del panel, lo cierra
-  extra.addEventListener('click', (e) => {
-    if (e.target.closest('[data-app-color]') || e.target.closest('[data-theme]')) {
-      setTimeout(close, 150);
-    }
+  // Cierra solo si se toca fuera del botón y del panel
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#nav-extra') && !e.target.closest('#nav-hamburger')) close();
   });
 }
 

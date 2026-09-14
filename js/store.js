@@ -324,6 +324,25 @@ const Store = (() => {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
+  // ------------------------------------------------ notificaciones push (FCM)
+
+  async function getFcmState() {
+    const r = refUser();
+    if (!r) return null;
+    try {
+      const snap = await r.child('fcm').once('value');
+      return snap.val() || null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function saveFcm(state) {
+    const r = refUser();
+    if (!r) return Promise.reject(new Error('No hay usuario autenticado'));
+    return r.child('fcm').set(state || { enabled: false, token: null, updatedAt: Date.now() });
+  }
+
   return {
     start,
     load,
@@ -332,6 +351,8 @@ const Store = (() => {
     signInWithGoogle,
     signOut,
     getUser,
+    getFcmState,
+    saveFcm,
     set onStatus(fn) {
       onStatus = fn;
     },

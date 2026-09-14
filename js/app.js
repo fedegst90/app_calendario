@@ -20,6 +20,7 @@ const App = (() => {
           WeekView.init(App);
           MonthView.init(App);
           SettingsUI.init(App);
+          PushManager.init();
           switchTab('subjects');
           setSyncStatus(state && state.source === 'offline' ? 'offline' : 'ok');
         });

@@ -59,6 +59,9 @@
           <i class="bi bi-calendar3 me-2"></i>Mi Calendario
         </span>
         <div class="nav-actions d-flex gap-2 align-items-center">
+          <button id="btn-notifications" class="btn btn-outline-light btn-sm d-none" title="Notificaciones">
+            <i class="bi bi-bell" id="btn-notifications-icon"></i><span class="btn-label">Notificaciones</span>
+          </button>
           <button id="btn-logout" class="btn btn-outline-light btn-sm d-none" title="Cerrar sesión">
             <i class="bi bi-box-arrow-right"></i>
           </button>
@@ -102,7 +105,7 @@
       <div class="row g-3">
         <div class="col-lg-4">
           <div class="card shadow-sm">
-            <div class="card-header"><i class="bi bi-plus-circle me-1"></i>Nueva materia</div>
+            <div class="card-header"><i class="bi bi-plus-circle me-1"></i><span id="subject-form-title">Nueva materia</span></div>
             <div class="card-body">
               <form id="subject-form">
                 <div class="mb-2">
@@ -125,7 +128,8 @@
                     <ul class="dropdown-menu w-100 color-menu-scroll" id="subject-color-menu"></ul>
                   </div>
                 </div>
-                <button class="btn btn-primary w-100 mt-2">Guardar materia</button>
+                <button type="button" id="subject-cancel" class="btn btn-outline-secondary w-100 mt-2 d-none">Cancelar edición</button>
+                <button id="subject-submit" class="btn btn-primary w-100 mt-2">Guardar materia</button>
               </form>
             </div>
           </div>
@@ -254,12 +258,14 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
   <script src="js/store.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/subjects.js"></script>
   <script src="js/week.js"></script>
   <script src="js/month.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/push.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

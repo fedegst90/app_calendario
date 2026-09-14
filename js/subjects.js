@@ -1,6 +1,7 @@
 const SubjectsView = (() => {
   let app;
   let selectedColor = '';
+  let editingId = null;
 
   function defaultColor() {
     const colors = app.state.colors || [];
@@ -24,12 +25,23 @@ const SubjectsView = (() => {
       const name = document.getElementById('subject-name').value.trim();
       const detail = document.getElementById('subject-info').value.trim();
       if (!name) return;
-      app.state.subjects.push({
-        id: Store.uid(),
-        name,
-        detail,
-        color: selectedColor,
-      });
+
+      if (editingId) {
+        const sub = app.state.subjects.find((s) => s.id === editingId);
+        if (sub) {
+          sub.name = name;
+          sub.detail = detail;
+          sub.color = selectedColor;
+        }
+        cancelEdit();
+      } else {
+        app.state.subjects.push({
+          id: Store.uid(),
+          name,
+          detail,
+          color: selectedColor,
+        });
+      }
       app.save(['subjects']);
       e.target.reset();
       selectedColor = defaultColor();
@@ -45,15 +57,57 @@ const SubjectsView = (() => {
     });
 
     document.getElementById('subject-list').addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-del]');
-      if (!btn) return;
-      const id = btn.dataset.del;
-      if (!confirm('¿Eliminar esta materia y todos sus horarios y eventos?')) return;
-      app.state.subjects = app.state.subjects.filter((s) => s.id !== id);
-      app.state.weekly = app.state.weekly.filter((w) => w.subjectId !== id);
-      app.state.events = app.state.events.filter((ev) => ev.subjectId !== id);
-      app.save(['subjects', 'weekly', 'events']);
+      const delBtn = e.target.closest('[data-del]');
+      if (delBtn) {
+        const id = delBtn.dataset.del;
+        if (!confirm('¿Eliminar esta materia y todos sus horarios y eventos?')) return;
+        app.state.subjects = app.state.subjects.filter((s) => s.id !== id);
+        app.state.weekly = app.state.weekly.filter((w) => w.subjectId !== id);
+        app.state.events = app.state.events.filter((ev) => ev.subjectId !== id);
+        app.save(['subjects', 'weekly', 'events']);
+        if (editingId === id) cancelEdit();
+        return;
+      }
+
+      const editBtn = e.target.closest('[data-edit]');
+      if (editBtn) startEdit(editBtn.dataset.edit);
     });
+
+    document.getElementById('subject-cancel').addEventListener('click', () => {
+      cancelEdit();
+      document.getElementById('subject-form').reset();
+      document.getElementById('subject-info').value = '';
+      selectedColor = defaultColor();
+      renderColorMenu();
+    });
+  }
+
+  function startEdit(id) {
+    const sub = app.state.subjects.find((s) => s.id === id);
+    if (!sub) return;
+    editingId = id;
+    document.getElementById('subject-name').value = sub.name;
+    document.getElementById('subject-info').value = sub.detail;
+    selectedColor = sub.color;
+    renderColorMenu();
+    applyEditMode();
+    document.getElementById('subject-name').focus();
+  }
+
+  function cancelEdit() {
+    editingId = null;
+    applyEditMode();
+  }
+
+  function applyEditMode() {
+    const editing = !!editingId;
+    document.getElementById('subject-form-title').textContent = editing
+      ? 'Editar materia'
+      : 'Nueva materia';
+    document.getElementById('subject-submit').textContent = editing
+      ? 'Guardar cambios'
+      : 'Guardar materia';
+    document.getElementById('subject-cancel').classList.toggle('d-none', !editing);
   }
 
   function renderColorMenu() {
@@ -85,12 +139,13 @@ const SubjectsView = (() => {
     list.innerHTML = app.state.subjects
       .map(
         (s) => `
-      <div class="list-group-item d-flex align-items-center gap-2">
+      <div class="list-group-item d-flex align-items-center gap-2${editingId === s.id ? ' list-group-item-primary' : ''}">
         <span class="subject-dot" style="background:${s.color}"></span>
         <div class="flex-grow-1">
           <div class="fw-semibold">${UI.esc(s.name)}</div>
           ${s.detail ? `<small class="text-muted">${UI.esc(s.detail)}</small>` : ''}
         </div>
+        <i class="bi bi-pencil text-secondary" role="button" data-edit="${s.id}" title="Editar"></i>
         <i class="bi bi-trash text-danger" role="button" data-del="${s.id}" title="Eliminar"></i>
       </div>`
       )

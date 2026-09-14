@@ -97,6 +97,11 @@ body {
     transform: rotate(360deg);
   }
 }
+#btn-notifications.active {
+  background: #fff;
+  color: var(--calendar-active);
+  border-color: #fff;
+}
 .palette-dots {
   display: inline-flex;
   gap: 2px;

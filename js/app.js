@@ -64,14 +64,36 @@ const App = (() => {
   function bindHamburger() {
   const btn = document.getElementById('nav-hamburger');
   const extra = document.getElementById('nav-extra');
+  const backdrop = document.getElementById('nav-backdrop');
   if (!btn || !extra) return;
+
+  function close() {
+    extra.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('show');
+  }
+
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    extra.classList.toggle('open');
+    const open = extra.classList.toggle('open');
+    if (backdrop) backdrop.classList.toggle('show', open);
   });
+
+  if (backdrop) backdrop.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') close();
+  });
+
+  // Cierra si se toca fuera del botón y del panel
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('#nav-extra-wrap')) extra.classList.remove('open');
+    if (!e.target.closest('#nav-extra-wrap')) close();
+  });
+
+  // Al elegir color/tema dentro del panel, lo cierra
+  extra.addEventListener('click', (e) => {
+    if (e.target.closest('[data-app-color]') || e.target.closest('[data-theme]')) {
+      setTimeout(close, 150);
+    }
   });
 }
 

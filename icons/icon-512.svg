@@ -1,4 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="108" fill="#0d6efd"/>
-  <text x="256" y="352" font-size="320" text-anchor="middle" dominant-baseline="middle">📅</text>
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#0d6efd"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="72" width="384" height="392" rx="60" fill="#ffffff"/>
+  <rect x="64" y="72" width="384" height="120" rx="60" fill="url(#hdr)"/>
+  <rect x="64" y="132" width="384" height="60" fill="url(#hdr)"/>
+  <circle cx="150" cy="132" r="16" fill="#ffffff" opacity="0.95"/>
+  <circle cx="256" cy="132" r="16" fill="#ffffff" opacity="0.95"/>
+  <circle cx="362" cy="132" r="16" fill="#ffffff" opacity="0.95"/>
+  <rect x="64" y="262" width="384" height="4" rx="2" fill="#dee2e6"/>
+  <rect x="64" y="342" width="384" height="4" rx="2" fill="#dee2e6"/>
+  <rect x="150" y="192" width="5" height="272" fill="#e9ecef"/>
+  <rect x="256" y="192" width="5" height="272" fill="#e9ecef"/>
+  <rect x="362" y="192" width="5" height="272" fill="#e9ecef"/>
+  <rect x="94" y="216" width="132" height="104" rx="22" fill="#ffd43b"/>
+  <text x="160" y="295" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="700" text-anchor="middle" fill="#212529">17</text>
+  <circle cx="308" cy="268" r="20" fill="#27ae60"/>
+  <circle cx="368" cy="268" r="20" fill="#3498db"/>
 </svg>

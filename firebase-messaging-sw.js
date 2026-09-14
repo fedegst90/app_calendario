@@ -15,7 +15,7 @@ const messaging = firebase.messaging();
 
 /* ---------- Caché offline / PWA ---------- */
 
-const CACHE = 'mi-calendario-v1';
+const CACHE = 'mi-calendario-v2';
 const SHELL = [
   './',
   './index.html',
@@ -28,9 +28,13 @@ const SHELL = [
   './js/week.js',
   './js/month.js',
   './js/settings.js',
+  './js/pwa.js',
   './js/push.js',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-192-maskable.png',
+  './icons/icon-512-maskable.png',
+  './icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -73,8 +77,8 @@ messaging.onBackgroundMessage(function (payload) {
   const title = n.title || 'Mi Calendario';
   const options = {
     body: n.body || 'Tenés algo nuevo en tu agenda.',
-    icon: n.icon || 'icons/icon-192.svg',
-    badge: 'icons/icon-192.svg',
+    icon: n.icon || './icons/icon-192.png',
+    badge: './icons/icon-192.png',
     data: payload.data || {},
   };
   self.registration.showNotification(title, options);

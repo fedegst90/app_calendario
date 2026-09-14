@@ -5,6 +5,7 @@ const App = (() => {
   function init() {
     if (started) return;
     started = true;
+    PwaInstall.init();
     bindTabs();
     bindAuthButtons();
     Store.onStatus = (kind) => setSyncStatus(kind);

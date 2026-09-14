@@ -125,6 +125,15 @@ const PushManager = (() => {
 
   // Pide el permiso de notificaciones si hace falta (para recordatorios locales).
   async function ensurePermission() {
+    if (typeof PwaInstall !== 'undefined' && PwaInstall.isIOS && PwaInstall.isIOS()) {
+      if (!PwaInstall.isStandalone()) {
+        alert(
+          'En iPhone/iPad las notificaciones se activan después de instalar la app: tocá el botón "Instalar" o usá Compartir → Añadir a pantalla de inicio.'
+        );
+        return false;
+      }
+      if (self.Notification) return await requestPermission();
+    }
     if (!('Notification' in window)) {
       alert('Este navegador no soporta notificaciones.');
       return false;
@@ -134,6 +143,10 @@ const PushManager = (() => {
       return false;
     }
     if (Notification.permission === 'granted') return true;
+    return requestPermission();
+  }
+
+  async function requestPermission() {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') alert('Permiso denegado: no se mostrarán recordatorios.');
     return perm === 'granted';

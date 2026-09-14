@@ -84,22 +84,9 @@ const App = (() => {
     if (e.key === 'Escape' || e.key === 'Esc') close();
   });
 
-  // En móvil, los clics dentro del panel lateral no lo cierran:
-  // solo se cierra con ⋯, backdrop, ESC o tocando afuera.
-  const isMobile = () => window.matchMedia('(max-width: 991.98px)').matches;
-  extra.addEventListener('click', (e) => {
-    if (e.target.closest('.dropdown-menu')) return;
-    if (!isMobile()) return;
-    e.stopPropagation();
-    extra.querySelectorAll('.dropdown.show').forEach((d) => {
-      if (!d.contains(e.target)) {
-        const t = d.querySelector('.dropdown-toggle');
-        if (t && window.bootstrap) bootstrap.Dropdown.getOrCreateInstance(t).hide();
-      }
-    });
-  });
-
-  // Cierra solo si se toca fuera del botón y del panel
+  // Cierra solo si se toca fuera del botón y del panel.
+  // Los clics dentro del panel fluyen normalmente (Bootstrap cierra el
+  // desplegable abierto al abrir otro) y nunca cierran el panel.
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#nav-extra') && !e.target.closest('#nav-hamburger')) close();
   });

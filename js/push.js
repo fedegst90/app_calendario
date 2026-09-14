@@ -1,7 +1,7 @@
 const PushManager = (() => {
   // Key VAPID pública del proyecto. Se genera en Firebase Console → Configuración
   // del proyecto → Cloud Messaging → Configuración web → Clave pública VAPID.
-  const VAPID_KEY = '__REEMPLAZA_CON_TU_VAPID_KEY__';
+  const VAPID_KEY = 'BKzJ0hHigttR33EP4ODl914a6nz9oDCO9TFm8FY3-cbl4LiLAA_zVSPQKVymcATcf4up1TkxeMf7mFML4pt7770';
 
   const SW_PATH = 'firebase-messaging-sw.js';
 

@@ -18,6 +18,9 @@ const WeekView = (() => {
     const day = document.getElementById('week-day');
     day.innerHTML = DAYS.map((d, i) => `<option value="${i}">${d}</option>`).join('');
 
+    const nDay = document.getElementById('week-notify-day');
+    nDay.innerHTML = DAYS.map((d, i) => `<option value="${i}">${d}</option>`).join('');
+
     const start = document.getElementById('week-start');
     let opts = '';
     for (let h = HOUR_START; h < HOUR_END; h++) {
@@ -49,6 +52,8 @@ const WeekView = (() => {
         return;
       }
       fillSubjectSelect();
+      const daySel = document.getElementById('week-day');
+      document.getElementById('week-notify-day').value = daySel.value;
       document.getElementById('week-notify').value = '';
       modal = new bootstrap.Modal(document.getElementById('weekModal'));
       modal.show();
@@ -61,6 +66,7 @@ const WeekView = (() => {
       const end = +document.getElementById('week-end').value;
       const type = document.getElementById('week-type').value;
       const notify = document.getElementById('week-notify').value || null;
+      const notifyDay = notify ? +document.getElementById('week-notify-day').value : null;
 
       if (!subjectId) {
         alert('Primero agregá una materia en la pestaña Materias.');
@@ -70,7 +76,7 @@ const WeekView = (() => {
         alert('La hora de fin debe ser mayor a la de inicio.');
         return;
       }
-      app.state.weekly.push({ id: Store.uid(), subjectId, day, start, end, type, notify });
+      app.state.weekly.push({ id: Store.uid(), subjectId, day, start, end, type, notify, notifyDay });
       if (notify) PushManager.ensurePermission();
       app.save(['weekly']);
       if (modal) modal.hide();
@@ -144,7 +150,7 @@ const WeekView = (() => {
              style="top:${top}px;height:${height}px;left:calc(${left}% + 2px);width:calc(${pct}% - 4px);background:${color};color:${UI.contrast(color)}">
           <div class="wk-block-title">${UI.esc(name)}</div>
           <div class="wk-block-type">${TYPE_LABEL[w.type] || w.type} · ${UI.pad(w.start)}:00-${UI.pad(w.end)}:00</div>
-          ${w.notify ? `<div class="wk-block-notify"><i class="bi bi-bell-fill"></i> ${UI.esc(w.notify)}</div>` : ''}
+          ${w.notify ? `<div class="wk-block-notify"><i class="bi bi-bell-fill"></i> ${DAYS[w.notifyDay] || DAYS[w.day]} ${UI.esc(w.notify)}</div>` : ''}
         </div>`;
       })
       .join('');

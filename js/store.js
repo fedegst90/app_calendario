@@ -105,23 +105,31 @@ const Store = (() => {
         detail: str(s.detail),
         color: str(s.color),
       })),
-      weekly: (state.weekly || []).map((w) => ({
-        id: str(w.id),
-        subjectId: str(w.subjectId),
-        day: num(w.day),
-        start: num(w.start),
-        end: num(w.end),
-        type: str(w.type) || 'clase',
-        notify: str(w.notify) || null,
-      })),
-      events: (state.events || []).map((ev) => ({
-        id: str(ev.id),
-        title: str(ev.title),
-        subjectId: str(ev.subjectId) || null,
-        type: str(ev.type) || 'evento',
-        dates: parseDates(ev.dates),
-        notify: str(ev.notify) || null,
-      })),
+      weekly: (state.weekly || []).map((w) => {
+        const wNotif = str(w.notify) || null;
+        return {
+          id: str(w.id),
+          subjectId: str(w.subjectId),
+          day: num(w.day),
+          start: num(w.start),
+          end: num(w.end),
+          type: str(w.type) || 'clase',
+          notify: wNotif,
+          notifyDay: wNotif ? (w.notifyDay != null ? num(w.notifyDay) : num(w.day)) : null,
+        };
+      }),
+      events: (state.events || []).map((ev) => {
+        const evNotif = str(ev.notify) || null;
+        return {
+          id: str(ev.id),
+          title: str(ev.title),
+          subjectId: str(ev.subjectId) || null,
+          type: str(ev.type) || 'evento',
+          dates: parseDates(ev.dates),
+          notify: evNotif,
+          notifyDate: evNotif ? str(ev.notifyDate) || (parseDates(ev.dates)[0] || null) : null,
+        };
+      }),
       colors:
         state.colors && state.colors.length
           ? state.colors
@@ -233,7 +241,8 @@ const Store = (() => {
       start: w.start,
       end: w.end,
       type: w.type,
-      notify: w.notify || null,
+      notify: (w.notify && w.notifyDay != null) ? w.notify : null,
+      notifyDay: (w.notify && w.notifyDay != null) ? w.notifyDay : null,
     };
   }
 
@@ -244,7 +253,8 @@ const Store = (() => {
       subjectId: ev.subjectId || '',
       type: ev.type,
       dates: ev.dates || [],
-      notify: ev.notify || null,
+      notify: (ev.notify && ev.notifyDate) ? ev.notify : null,
+      notifyDate: (ev.notify && ev.notifyDate) ? ev.notifyDate : null,
     };
   }
 

@@ -53,6 +53,7 @@ const MonthView = (() => {
       const subjectId = document.getElementById('event-subject').value;
       const type = document.getElementById('event-type').value;
       const notify = document.getElementById('event-notify').value || null;
+      const notifyDate = notify ? document.getElementById('event-notify-date').value || null : null;
 
       if (!title) {
         alert('Ingresá un título para el evento.');
@@ -69,6 +70,7 @@ const MonthView = (() => {
         type,
         dates: [...selectedDates].sort(),
         notify,
+        notifyDate,
       });
       selectedDates.clear();
       if (notify) PushManager.ensurePermission();
@@ -100,6 +102,7 @@ const MonthView = (() => {
     document.getElementById('event-title').value = '';
     document.getElementById('event-type').value = 'evaluacion';
     document.getElementById('event-notify').value = '';
+    document.getElementById('event-notify-date').value = [...selectedDates].sort()[0] || '';
 
     const sel = document.getElementById('event-subject');
     const opts = app.state.subjects
@@ -195,7 +198,7 @@ const MonthView = (() => {
         <span class="subject-dot" style="background:${eventColor(ev)}"></span>
         <div class="flex-grow-1">
           <div class="fw-semibold">${UI.esc(ev.title)} <span class="badge text-bg-light border">${UI.esc(TYPE_LABEL[ev.type] || ev.type)}</span></div>
-          <small class="text-muted">${subLabel}${ev.dates.map(UI.fmtDate).join(', ')}${ev.notify ? ` · <i class="bi bi-bell-fill"></i> ${UI.esc(ev.notify)}` : ''}</small>
+          <small class="text-muted">${subLabel}${ev.dates.map(UI.fmtDate).join(', ')}${ev.notify ? ` · <i class="bi bi-bell-fill"></i> ${UI.fmtDate(ev.notifyDate)} ${UI.esc(ev.notify)}` : ''}</small>
         </div>
         <i class="bi bi-trash text-danger" role="button" data-del="${ev.id}" title="Eliminar"></i>
       </div>`;

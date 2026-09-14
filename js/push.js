@@ -187,10 +187,10 @@ const PushManager = (() => {
     if (!state) return;
     const now = Date.now();
 
-    // Horarios de la semana (se repiten cada semana)
+    // Horarios de la semana (se repiten cada semana en el día/hora elegidos)
     (state.weekly || []).forEach((w) => {
-      if (!w.notify) return;
-      const at = nextWeeklyMs(w.day, w.notify);
+      if (!w.notify || w.notifyDay == null) return;
+      const at = nextWeeklyMs(w.notifyDay, w.notify);
       if (at == null) return;
       const prev = at - WEEK_MS;
       if (prev <= now + 2000 && prev >= now - TICK_MS - 2000) {
@@ -200,16 +200,14 @@ const PushManager = (() => {
       }
     });
 
-    // Eventos del mes (una sola vez, en la fecha indicada)
+    // Eventos del mes (una sola vez, en el día/hora elegidos)
     (state.events || []).forEach((ev) => {
-      if (!ev.notify) return;
-      (ev.dates || []).forEach((iso) => {
-        const at = eventAtMs(iso, ev.notify);
-        if (at == null) return;
-        if (at <= now + 2000 && at >= now - TICK_MS - 2000) {
-          notifyUser(ev.title, `${UI.fmtDate(iso)} a las ${ev.notify}.`);
-        }
-      });
+      if (!ev.notify || !ev.notifyDate) return;
+      const at = eventAtMs(ev.notifyDate, ev.notify);
+      if (at == null) return;
+      if (at <= now + 2000 && at >= now - TICK_MS - 2000) {
+        notifyUser(ev.title, `${UI.fmtDate(ev.notifyDate)} a las ${ev.notify}.`);
+      }
     });
   }
 

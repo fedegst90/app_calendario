@@ -26,7 +26,8 @@ const SubjectsView = (() => {
       const detail = document.getElementById('subject-info').value.trim();
       if (!name) return;
 
-      if (editingId) {
+      const wasEditing = !!editingId;
+      if (wasEditing) {
         const sub = app.state.subjects.find((s) => s.id === editingId);
         if (sub) {
           sub.name = name;
@@ -43,6 +44,7 @@ const SubjectsView = (() => {
         });
       }
       app.save(['subjects']);
+      UI.toast(wasEditing ? 'Materia actualizada' : 'Materia guardada', 'success');
       e.target.reset();
       selectedColor = defaultColor();
       renderColorMenu();
@@ -69,6 +71,7 @@ const SubjectsView = (() => {
             app.state.weekly = app.state.weekly.filter((w) => w.subjectId !== id);
             app.state.events = app.state.events.filter((ev) => ev.subjectId !== id);
             app.save(['subjects', 'weekly', 'events']);
+            UI.toast('Materia eliminada', 'success');
             if (editingId === id) cancelEdit();
           },
         });

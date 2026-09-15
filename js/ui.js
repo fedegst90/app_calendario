@@ -45,6 +45,49 @@ const UI = {
     return p ? p.nombre : String(hex || '');
   },
 
+  // Toast no bloqueante. kind: success | danger | warning | info.
+  toast(message, kind) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const kindMap = {
+      success: { cls: 'text-bg-success', icon: 'bi-check-circle' },
+      danger: { cls: 'text-bg-danger', icon: 'bi-x-circle' },
+      warning: { cls: 'text-bg-warning', icon: 'bi-exclamation-triangle' },
+      info: { cls: 'text-bg-info', icon: 'bi-info-circle' },
+    };
+    const cfg = kindMap[kind] || kindMap.info;
+
+    const t = document.createElement('div');
+    t.className = 'toast align-items-center ' + cfg.cls + ' border-0';
+    t.setAttribute('role', 'alert');
+    t.setAttribute('aria-live', 'assertive');
+    t.setAttribute('aria-atomic', 'true');
+
+    const body = document.createElement('div');
+    body.className = 'toast-body';
+    const ic = document.createElement('i');
+    ic.className = 'bi ' + cfg.icon + ' me-1';
+    body.appendChild(ic);
+    body.appendChild(document.createTextNode(message || ''));
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-close btn-close-white me-2 m-auto';
+    btn.setAttribute('data-bs-dismiss', 'toast');
+    btn.setAttribute('aria-label', 'Cerrar');
+
+    const d = document.createElement('div');
+    d.className = 'd-flex';
+    d.appendChild(body);
+    d.appendChild(btn);
+    t.appendChild(d);
+
+    container.appendChild(t);
+    const inst = new bootstrap.Toast(t, { delay: 3500 });
+    inst.show();
+    t.addEventListener('hidden.bs.toast', () => t.remove());
+  },
+
   // Diálogo de aviso no bloqueante (reemplaza a alert()).
   // opts: { text, title } o pasá text y title directamente.
   alertDialog(text, title) {

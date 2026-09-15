@@ -113,6 +113,7 @@ const WeekView = (() => {
       }
       if (notify) PushManager.ensurePermission();
       app.save(['weekly']);
+      UI.toast('Horario guardado', 'success');
       if (modal) modal.hide();
       render();
     });
@@ -139,6 +140,7 @@ const WeekView = (() => {
           app.state.weekly = app.state.weekly.filter((w) => w.id !== id);
           detailId = null;
           app.save(['weekly']);
+          UI.toast('Horario eliminado', 'success');
         },
       });
     });

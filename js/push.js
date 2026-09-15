@@ -98,6 +98,7 @@ const PushManager = (() => {
     const newToken = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
     await Store.saveFcm({ enabled: true, token: newToken, updatedAt: Date.now() });
     setState(true, newToken);
+    UI.toast('Notificaciones activadas', 'success');
   }
 
   async function disable() {
@@ -106,6 +107,7 @@ const PushManager = (() => {
     } catch (err) {}
     await Store.saveFcm({ enabled: false, token: null, updatedAt: Date.now() });
     setState(false, null);
+    UI.toast('Notificaciones desactivadas', 'success');
   }
 
   function handleForeground(payload) {

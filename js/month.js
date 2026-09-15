@@ -43,6 +43,10 @@ const MonthView = (() => {
     });
 
     document.getElementById('btn-new-event').addEventListener('click', () => {
+      if (!selectedDates.size) {
+        UI.toast('Seleccioná al menos un día en el calendario del mes.', 'warning');
+        return;
+      }
       fillEventModal();
       eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
       eventModal.show();
@@ -75,6 +79,7 @@ const MonthView = (() => {
       selectedDates.clear();
       if (notify) PushManager.ensurePermission();
       app.save(['events']);
+      UI.toast('Evento guardado', 'success');
       eventModal.hide();
       render();
     });
@@ -89,6 +94,7 @@ const MonthView = (() => {
         onConfirm: () => {
           app.state.events = app.state.events.filter((ev) => ev.id !== btn.dataset.del);
           app.save(['events']);
+          UI.toast('Evento eliminado', 'success');
         },
       });
     });

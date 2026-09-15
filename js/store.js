@@ -330,7 +330,12 @@ const Store = (() => {
           settings: state.settings || {},
         })
         .then(() => setStatus('ok'))
-        .catch(() => setStatus('offline'));
+        .catch(() => {
+          setStatus('offline');
+          if (typeof UI !== 'undefined' && UI.toast) {
+            UI.toast('No se pudieron guardar los cambios. Revisá tu conexión.', 'danger');
+          }
+        });
     }, 700);
   }
 

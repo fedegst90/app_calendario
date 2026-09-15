@@ -79,7 +79,7 @@ const PushManager = (() => {
         await enable();
       }
     } catch (err) {
-      alert('No se pudo configurar las notificaciones: ' + err.message);
+      UI.alertDialog('No se pudo configurar las notificaciones: ' + err.message, 'Notificaciones');
     }
   }
 
@@ -127,19 +127,20 @@ const PushManager = (() => {
   async function ensurePermission() {
     if (typeof PwaInstall !== 'undefined' && PwaInstall.isIOS && PwaInstall.isIOS()) {
       if (!PwaInstall.isStandalone()) {
-        alert(
-          'En iPhone/iPad las notificaciones se activan después de instalar la app: tocá el botón "Instalar" o usá Compartir → Añadir a pantalla de inicio.'
+        UI.alertDialog(
+          'En iPhone/iPad las notificaciones se activan después de instalar la app: tocá el botón "Instalar" o usá Compartir → Añadir a pantalla de inicio.',
+          'Notificaciones'
         );
         return false;
       }
       if (self.Notification) return await requestPermission();
     }
     if (!('Notification' in window)) {
-      alert('Este navegador no soporta notificaciones.');
+      UI.alertDialog('Este navegador no soporta notificaciones.', 'Notificaciones');
       return false;
     }
     if (Notification.permission === 'denied') {
-      alert('Notificaciones bloqueadas. Habilitalas desde la configuración del navegador.');
+      UI.alertDialog('Notificaciones bloqueadas. Habilitalas desde la configuración del navegador.', 'Notificaciones');
       return false;
     }
     if (Notification.permission === 'granted') return true;
@@ -148,7 +149,7 @@ const PushManager = (() => {
 
   async function requestPermission() {
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') alert('Permiso denegado: no se mostrarán recordatorios.');
+    if (perm !== 'granted') UI.alertDialog('Permiso denegado: no se mostrarán recordatorios.', 'Notificaciones');
     return perm === 'granted';
   }
 

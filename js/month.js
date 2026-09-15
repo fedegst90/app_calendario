@@ -56,11 +56,11 @@ const MonthView = (() => {
       const notifyDate = notify ? document.getElementById('event-notify-date').value || null : null;
 
       if (!title) {
-        alert('Ingresá un título para el evento.');
+        UI.alertDialog('Ingresá un título para el evento.');
         return;
       }
       if (!selectedDates.size) {
-        alert('Seleccioná al menos un día en el calendario del mes.');
+        UI.alertDialog('Seleccioná al menos un día en el calendario del mes.');
         return;
       }
       app.state.events.push({

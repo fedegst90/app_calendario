@@ -45,6 +45,21 @@ const UI = {
     return p ? p.nombre : String(hex || '');
   },
 
+  // Diálogo de aviso no bloqueante (reemplaza a alert()).
+  // opts: { text, title } o pasá text y title directamente.
+  alertDialog(text, title) {
+    const modalEl = document.getElementById('alertModal');
+    const titleEl = document.getElementById('alert-modal-title');
+    const textEl = document.getElementById('alert-modal-text');
+    if (!modalEl) {
+      console.warn('alertDialog: no se encontró el modal de avisos.');
+      return;
+    }
+    if (titleEl) titleEl.textContent = title || 'Aviso';
+    if (textEl) textEl.textContent = text || '';
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  },
+
   // Modal genérico de confirmación de borrado.
   // opts: { title, text, onConfirm }
   confirmDelete(opts) {

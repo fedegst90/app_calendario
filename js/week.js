@@ -52,7 +52,7 @@ const WeekView = (() => {
   function bindEvents() {
     document.getElementById('week-add').addEventListener('click', () => {
       if (!app.state.subjects.length) {
-        alert('Primero agregá una materia en la pestaña Materias.');
+        UI.alertDialog('Primero agregá una materia en la pestaña Materias.');
         return;
       }
       editingId = null;
@@ -78,11 +78,11 @@ const WeekView = (() => {
       const description = document.getElementById('week-description-edit').value.trim().slice(0, MAX_DESC);
 
       if (!subjectId) {
-        alert('Primero agregá una materia en la pestaña Materias.');
+        UI.alertDialog('Primero agregá una materia en la pestaña Materias.');
         return;
       }
       if (end <= start) {
-        alert('La hora de fin debe ser mayor a la de inicio.');
+        UI.alertDialog('La hora de fin debe ser mayor a la de inicio.');
         return;
       }
 

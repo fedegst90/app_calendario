@@ -64,7 +64,7 @@ const MonthView = (() => {
         return;
       }
       if (!selectedDates.size) {
-        UI.alertDialog('Seleccioná al menos un día en el calendario del mes.');
+        UI.toast('Seleccioná al menos un día en el calendario del mes.', 'warning');
         return;
       }
       app.state.events.push({

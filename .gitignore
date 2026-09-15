@@ -28,3 +28,6 @@ venv/
 
 # Logs
 *.log
+
+# Descripción local de la app (no se sube a GitHub)
+APP.md

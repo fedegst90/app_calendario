@@ -22,6 +22,8 @@ const PushManager = (() => {
     'data:image/svg+xml,' +
     encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📅</text></svg>`);
 
+  const DAY_NAMES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
   // --------------------------------------------------- FCM (push externo)
 
   function init() {
@@ -260,24 +262,35 @@ const PushManager = (() => {
       if (prev <= now && prev >= now - CATCH_UP_MS) {
         const sub = App.getSubject(w.subjectId);
         const subName = sub ? sub.name : 'Sin materia';
+        // Aviso en notifyDay/notify; el mensaje dice qué clase es (día y
+        // hora de cursada) para que no se confunda con el momento del aviso.
         tryNotify(
           'w:' + w.id + ':' + prev,
           subName,
-          `Tenés ${TYPE_LABEL[w.type] || w.type} a las ${UI.fmtHM(w.start)}.`
+          `Tenés ${TYPE_LABEL[w.type] || w.type} ${
+            w.day != null && DAY_NAMES[w.day] ? 'el ' + DAY_NAMES[w.day] : ''
+          } a las ${UI.fmtHM(w.start)}.`
         );
       }
     });
 
-    // Eventos del mes (una sola vez, en el día/hora elegidos)
+    // Eventos del mes (una sola vez, en el día/hora elegidos para el aviso;
+    // el mensaje aclara la/s fecha/s del evento en sí)
     (state.events || []).forEach((ev) => {
       if (!ev.notify || !ev.notifyDate) return;
       const at = eventAtMs(ev.notifyDate, ev.notify);
       if (at == null) return;
       if (at <= now && at >= now - CATCH_UP_MS) {
-        tryNotify('e:' + ev.id + ':' + at, ev.title, `${UI.fmtDate(ev.notifyDate)} a las ${ev.notify}.`);
+        const fechas = (ev.dates || []).slice(0, 3).map((d) => UI.fmtDate(d)).join(', ');
+        const mas = (ev.dates || []).length > 3 ? '…' : '';
+        tryNotify(
+          'e:' + ev.id + ':' + at,
+          ev.title,
+          `${TYPE_LABEL[ev.type] || ev.type} el ${fechas || UI.fmtDate(ev.notifyDate)}${mas}.`
+        );
       }
     });
   }
 
-  return { init, schedule, ensurePermission };
+  return { init, schedule, ensurePermission, checkNow: tick };
 })();

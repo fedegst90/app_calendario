@@ -10,6 +10,7 @@ const WeekView = (() => {
   let detailModal = null;
   let detailId = null;
   let editingId = null;
+  let lastDay = null; // día de cursada cargado al abrir el form
 
   function init(a) {
     app = a;
@@ -30,6 +31,19 @@ const WeekView = (() => {
   function defaultTimes() {
     document.getElementById('week-start').value = '08:00';
     document.getElementById('week-end').value = '10:00';
+  }
+
+  function markLastDay() {
+    lastDay = document.getElementById('week-day').value;
+  }
+
+  // El día elegido para el aviso sigue al de la cursada mientras el usuario
+  // no haya elegido un día distinto para el recordatorio.
+  function onDayChange() {
+    const daySel = document.getElementById('week-day');
+    const nDay = document.getElementById('week-notify-day');
+    if (nDay && lastDay != null && nDay.value === lastDay) nDay.value = daySel.value;
+    markLastDay();
   }
 
   function fillSubjectSelect() {
@@ -53,6 +67,7 @@ const WeekView = (() => {
       defaultTimes();
       const daySel = document.getElementById('week-day');
       document.getElementById('week-notify-day').value = daySel.value;
+      markLastDay();
       document.getElementById('week-notify').value = '';
       document.getElementById('week-description-edit').value = '';
       updateEditDescCount();
@@ -150,6 +165,8 @@ const WeekView = (() => {
     });
 
     document.getElementById('week-description-edit').addEventListener('input', updateEditDescCount);
+
+    document.getElementById('week-day').addEventListener('change', onDayChange);
   }
 
   function updateEditDescCount() {
@@ -195,6 +212,7 @@ const WeekView = (() => {
     document.getElementById('week-type').value = item.type;
     document.getElementById('week-notify').value = item.notify || '';
     document.getElementById('week-notify-day').value = item.notifyDay != null ? String(item.notifyDay) : String(item.day);
+    markLastDay();
     document.getElementById('week-description-edit').value = item.description || '';
     updateEditDescCount();
     modal = new bootstrap.Modal(document.getElementById('weekModal'));

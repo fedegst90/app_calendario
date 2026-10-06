@@ -21,12 +21,23 @@ const Store = (() => {
     settings: { theme: 'auto', themeColor: '#0d6efd' },
   };
 
+  const SESSION_KEY = 'app_calendario_session';
+  const FCM_CACHE_KEY = 'app_calendario_fcm_cache';
+  const FCM_PENDING_KEY = 'app_calendario_fcm_pending';
+  const REMOTE_TIMEOUT_MS = 8000;
+
   let onStatus = null;
   let onAuth = null;
   let currentUser = null;
   let app = null;
   let dbRef = null;
   let timer = null;
+  let flushing = false;
+  let queueWrite = null;
+  let retryTimer = null;
+  let pendingTs = null;
+  let memPending = null; // respaldo en memoria si IndexedDB no está disponible
+  let offlineToastShown = false;
 
   try {
     if (typeof firebase !== 'undefined') {
@@ -42,6 +53,52 @@ const Store = (() => {
 
   function setStatus(kind) {
     if (typeof onStatus === 'function') onStatus(kind);
+  }
+
+  // Las promesas de Firebase no rechazan cuando no hay red: se quedan penjando
+  // hasta reconectar. Con timeout la app nunca queda trabada en "Cargando…".
+  function withTimeout(promise, ms) {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('Sin respuesta de Firebase (timeout)')), ms);
+      promise.then(
+        (v) => {
+          clearTimeout(t);
+          resolve(v);
+        },
+        (e) => {
+          clearTimeout(t);
+          reject(e);
+        }
+      );
+    });
+  }
+
+  function isOffline() {
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+  }
+
+  function uidKey() {
+    return currentUser ? currentUser.uid : null;
+  }
+
+  function readJson(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key) || 'null');
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function writeJson(key, value) {
+    try {
+      if (value == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {}
+  }
+
+  function scopedKey(base) {
+    const uid = uidKey();
+    return uid ? base + '_' + uid : base;
   }
 
   // ------------------------------------------------ utilidades de datos
@@ -166,6 +223,73 @@ const Store = (() => {
     }
   }
 
+  // ------------------------------------------- snapshot + cola (IndexedDB)
+
+  // Guarda el estado en IndexedDB (y en localStorage como respaldo inmediato).
+  async function saveSnapshot(state) {
+    saveLocal(state);
+    const uid = uidKey();
+    if (!uid || typeof LocalDB === 'undefined') return;
+    try {
+      await LocalDB.saveState(uid, state);
+    } catch (err) {}
+  }
+
+  // Lee el último snapshot: primero IndexedDB, si no, localStorage (migración).
+  async function loadSnapshot() {
+    const uid = uidKey();
+    if (uid && typeof LocalDB !== 'undefined') {
+      try {
+        const rec = await LocalDB.getState(uid);
+        if (rec && rec.state) return normalize(rec.state);
+      } catch (err) {}
+    }
+    return loadLocal();
+  }
+
+  // Cambios hechos sin conexión: quedan encolados hasta poder subirlos.
+  function setPending(state) {
+    const ts = Date.now();
+    memPending = state;
+    pendingTs = ts;
+    const uid = uidKey();
+    if (!uid || typeof LocalDB === 'undefined') return Promise.resolve();
+    return LocalDB.setPending(uid, state, ts).catch(() => {});
+  }
+
+  async function getPendingState() {
+    const uid = uidKey();
+    if (uid && typeof LocalDB !== 'undefined') {
+      try {
+        const rec = await LocalDB.getPending(uid);
+        if (rec && rec.state) {
+          memPending = rec.state;
+          pendingTs = rec.ts || null;
+          return memPending;
+        }
+      } catch (err) {}
+    }
+    return memPending;
+  }
+
+  // Borra la cola solo si nadie encoló algo más nuevo mientras subíamos.
+  async function clearPending(expectedTs) {
+    const uid = uidKey();
+    if (uid && typeof LocalDB !== 'undefined') {
+      try {
+        const rec = await LocalDB.getPending(uid);
+        if (rec && expectedTs != null && rec.ts !== expectedTs) return false;
+        await LocalDB.clearPending(uid);
+      } catch (err) {
+        return false;
+      }
+    }
+    if (expectedTs != null && pendingTs != null && pendingTs !== expectedTs) return false;
+    memPending = null;
+    pendingTs = null;
+    return true;
+  }
+
   // Meta con tema/color del último usuario activo (para pintar sin parpadeo antes del login)
   function saveMeta(state) {
     try {
@@ -191,19 +315,58 @@ const Store = (() => {
   // ------------------------------------------------ autenticación
 
   function start() {
+    bindConnectivity();
     if (!app || !firebase.auth) {
       notifyAuth(null);
       return;
     }
+    let resolved = false;
     firebase.auth().onAuthStateChanged((user) => {
+      resolved = true;
       currentUser = user
         ? { uid: user.uid, email: user.email || '', name: user.displayName || '' }
         : null;
       notifyAuth(currentUser);
     });
+
+    // Sin conexión la sesión persistida a veces no llega a resolverse:
+    // usamos la última conocida para entrar igual a los datos locales.
+    setTimeout(() => {
+      if (resolved || !isOffline()) return;
+      const cached = readJson(SESSION_KEY);
+      if (cached && cached.uid && !currentUser) {
+        currentUser = cached;
+        notifyAuth(currentUser);
+      }
+    }, 4000);
+  }
+
+  // Cambios de conectividad: al reconectar se reenvía todo lo pendiente.
+  function bindConnectivity() {
+    if (typeof window === 'undefined' || window.__storeNetBound) return;
+    window.__storeNetBound = true;
+    window.addEventListener('online', async () => {
+      const pending = await getPendingState();
+      const fcmPending = readJson(scopedKey(FCM_PENDING_KEY));
+      if (pending || fcmPending) {
+        setStatus('pending');
+        if (typeof UI !== 'undefined' && UI.toast) {
+          UI.toast('Conexión restablecida: sincronizando cambios…', 'info');
+        }
+      }
+      flush();
+    });
+    window.addEventListener('offline', () => {
+      setStatus('offline');
+      offlineToastShown = false;
+      if (typeof UI !== 'undefined' && UI.toast) {
+        UI.toast('Sin conexión: la app sigue funcionando y se sincroniza sola al reconectar.', 'warning');
+      }
+    });
   }
 
   function notifyAuth(user) {
+    writeJson(SESSION_KEY, user);
     if (typeof onAuth === 'function') onAuth(user);
   }
 
@@ -264,24 +427,47 @@ const Store = (() => {
     const userRef = refUser();
     if (!userRef) return null;
 
+    // 1) Cambios sin sincronizar: manda la copia local (se reenvían solos).
+    const pending = await getPendingState();
+    if (pending) {
+      const st = normalize(pending);
+      const off = isOffline();
+      st.source = off ? 'offline' : 'pending';
+      setStatus(off ? 'offline' : 'pending');
+      if (!off) setTimeout(() => flush(), 500);
+      return st;
+    }
+
+    // 2) Sin conexión: la caché local responde al instante, sin tocar la red.
+    if (isOffline()) {
+      const local = await loadSnapshot();
+      local.source = 'offline';
+      setStatus('offline');
+      return local;
+    }
+
     try {
-      const snap = await userRef.once('value');
+      const snap = await withTimeout(userRef.once('value'), REMOTE_TIMEOUT_MS);
       const data = snap.val();
 
       // Primer ingreso del usuario: migra caché local (si hubiera) y siembra la config en la base
       if (!data) {
         const legacy = loadLocal();
         const initState = normalize({ ...legacy, settings: getLocalSettings() });
-        await userRef.set({
-          materias: toMap(initState.subjects || []),
-          horarios: toMap((initState.weekly || []).map(serializeWeekly)),
-          eventos: toMap((initState.events || []).map(serializeEvent)),
-          colors: fallbackColors(),
-          settings: initState.settings || {},
-        });
-        saveLocal(initState);
+        await withTimeout(
+          userRef.set({
+            materias: toMap(initState.subjects || []),
+            horarios: toMap((initState.weekly || []).map(serializeWeekly)),
+            eventos: toMap((initState.events || []).map(serializeEvent)),
+            colors: fallbackColors(),
+            settings: initState.settings || {},
+          }),
+          REMOTE_TIMEOUT_MS
+        );
+        await saveSnapshot(initState);
         saveMeta(initState);
         initState.source = 'remote';
+        setStatus('ok');
         return initState;
       }
 
@@ -294,12 +480,15 @@ const Store = (() => {
         settings: { ...getLocalSettings(), ...(data.settings || {}) },
       });
       state.source = 'remote';
-      saveLocal(state);
+      await saveSnapshot(state);
       saveMeta(state);
+      setStatus('ok');
       return state;
     } catch (err) {
-      const local = loadLocal();
+      // Falla o timeout de red: se trabaja con lo último guardado en el dispositivo
+      const local = await loadSnapshot();
       local.source = 'offline';
+      setStatus('offline');
       return local;
     }
   }
@@ -310,33 +499,85 @@ const Store = (() => {
       .filter((c) => c.codigo);
   }
 
-  // Guarda TODO del usuario de una sola vez (un write al nodo users/{uid}, debounced)
+  // Guarda TODO del usuario de una sola vez: snapshot local (IndexedDB +
+  // localStorage) y, si hay red, subida a Firebase (sino queda en la cola).
   function save(state) {
-    saveLocal(state);
     saveMeta(state);
+    const snapshot = saveSnapshot(state);
     if (!refUser()) {
       setStatus('offline');
       return;
     }
     clearTimeout(timer);
     setStatus('pending');
+    queueWrite = Promise.resolve(snapshot)
+      .then(() => setPending(state))
+      .catch(() => {});
     timer = setTimeout(() => {
-      setStatus('pending');
-      refUser()
-        .update({
-          materias: toMap(state.subjects || []),
-          horarios: toMap((state.weekly || []).map(serializeWeekly)),
-          eventos: toMap((state.events || []).map(serializeEvent)),
-          settings: state.settings || {},
-        })
-        .then(() => setStatus('ok'))
-        .catch(() => {
-          setStatus('offline');
-          if (typeof UI !== 'undefined' && UI.toast) {
-            UI.toast('No se pudieron guardar los cambios. Revisá tu conexión.', 'danger');
-          }
-        });
+      Promise.resolve(queueWrite)
+        .then(() => flush())
+        .catch(() => {});
     }, 700);
+  }
+
+  // Sube a Firebase lo que haya en la cola. Si no hay red, no pasa nada:
+  // el 'online' (o el próximo arranque) lo reintenta.
+  async function flush() {
+    if (flushing) return;
+    flushing = true;
+    clearTimeout(retryTimer);
+    try {
+      if (queueWrite) await queueWrite;
+      const userRef = refUser();
+      const state = await getPendingState();
+      if (!state) {
+        // Nada de datos pendiente: igual reintenta el estado FCM si quedó fuera
+        if (!isOffline() && userRef) await flushFcm();
+        return;
+      }
+      if (!userRef || isOffline()) {
+        setStatus('offline');
+        return;
+      }
+      setStatus('pending');
+      try {
+        const ts = pendingTs;
+        await withTimeout(
+          userRef.update({
+            materias: toMap(state.subjects || []),
+            horarios: toMap((state.weekly || []).map(serializeWeekly)),
+            eventos: toMap((state.events || []).map(serializeEvent)),
+            settings: state.settings || {},
+          }),
+          REMOTE_TIMEOUT_MS
+        );
+        const cleared = await clearPending(ts);
+        if (!cleared) {
+          // Mientras subía entró un cambio nuevo: se sube enseguida
+          retryTimer = setTimeout(() => {
+            flush();
+          }, 500);
+          return;
+        }
+        await flushFcm();
+        offlineToastShown = false;
+        setStatus('ok');
+      } catch (err) {
+        setStatus('offline');
+        if (!isOffline() && !offlineToastShown) {
+          offlineToastShown = true;
+          if (typeof UI !== 'undefined' && UI.toast) {
+            UI.toast('Sin conexión: los cambios quedaron guardados en el dispositivo y se sincronizan solos.', 'danger');
+          }
+        }
+        // Reintento periódico mientras siga habiendo pendientes
+        retryTimer = setTimeout(() => {
+          flush();
+        }, 30000);
+      }
+    } finally {
+      flushing = false;
+    }
   }
 
   function uid() {
@@ -349,25 +590,53 @@ const Store = (() => {
 
   async function getFcmState() {
     const r = refUser();
-    if (!r) return null;
+    const cache = readJson(scopedKey(FCM_CACHE_KEY));
+    if (!r || isOffline()) return cache;
     try {
-      const snap = await r.child('fcm').once('value');
-      return snap.val() || null;
+      const snap = await withTimeout(r.child('fcm').once('value'), REMOTE_TIMEOUT_MS);
+      const value = snap.val() || null;
+      writeJson(scopedKey(FCM_CACHE_KEY), value);
+      return value;
     } catch (err) {
-      return null;
+      // Sin red: el último estado conocido (para que el botón no mienta)
+      return cache;
     }
   }
 
-  function saveFcm(state) {
+  async function saveFcm(state) {
+    const value = state || { enabled: false, token: null, updatedAt: Date.now() };
+    writeJson(scopedKey(FCM_CACHE_KEY), value);
     const r = refUser();
-    if (!r) return Promise.reject(new Error('No hay usuario autenticado'));
-    return r.child('fcm').set(state || { enabled: false, token: null, updatedAt: Date.now() });
+    if (!r) throw new Error('No hay usuario autenticado');
+    if (isOffline()) {
+      // Sin conexión: queda marcado y se sube al reconectar
+      writeJson(scopedKey(FCM_PENDING_KEY), value);
+      return;
+    }
+    try {
+      await withTimeout(r.child('fcm').set(value), REMOTE_TIMEOUT_MS);
+      writeJson(scopedKey(FCM_PENDING_KEY), null);
+    } catch (err) {
+      // Sin conexión: queda marcado y se sube al reconectar
+      writeJson(scopedKey(FCM_PENDING_KEY), value);
+    }
+  }
+
+  async function flushFcm() {
+    const pending = readJson(scopedKey(FCM_PENDING_KEY));
+    const r = refUser();
+    if (!pending || !r || isOffline()) return;
+    try {
+      await withTimeout(r.child('fcm').set(pending), REMOTE_TIMEOUT_MS);
+      writeJson(scopedKey(FCM_PENDING_KEY), null);
+    } catch (err) {}
   }
 
   return {
     start,
     load,
     save,
+    flush,
     uid,
     signInWithGoogle,
     signOut,

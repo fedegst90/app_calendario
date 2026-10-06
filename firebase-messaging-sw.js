@@ -15,7 +15,7 @@ const messaging = firebase.messaging();
 
 /* ---------- Caché offline / PWA ---------- */
 
-const CACHE = 'mi-calendario-v2';
+const CACHE = 'mi-calendario-v3';
 const SHELL = [
   './',
   './index.html',
@@ -23,6 +23,7 @@ const SHELL = [
   './css/style.css',
   './js/app.js',
   './js/store.js',
+  './js/idb.js',
   './js/ui.js',
   './js/subjects.js',
   './js/week.js',
@@ -37,12 +38,29 @@ const SHELL = [
   './icons/apple-touch-icon.png',
 ];
 
+// CDNs (Bootstrap, iconos, Firebase): se cachean aparte y sin romper la
+// instalación si alguno falla, así la app arranca igual sin internet.
+const EXTRAS = [
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/fonts/bootstrap-icons.woff2',
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js',
+];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE)
-      .then((cache) => cache.addAll(SHELL))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE).then((cache) =>
+      Promise.all([
+        cache.addAll(SHELL),
+        ...EXTRAS.map((url) =>
+          cache.add(new Request(url, { mode: 'no-cors' })).catch(() => {})
+        ),
+      ])
+    ).then(() => self.skipWaiting())
   );
 });
 

@@ -14,18 +14,33 @@ const App = (() => {
     Store.onAuth = (user) => {
       if (user) {
         updateUserMenu(user);
-        Store.load().then((loaded) => {
-          state = loaded;
-          showLoading(false);
-          hideLogin();
-          SubjectsView.init(App);
-          WeekView.init(App);
-          MonthView.init(App);
-          SettingsUI.init(App);
-          PushManager.init();
-          switchTab('subjects');
-          setSyncStatus(state && state.source === 'offline' ? 'offline' : 'ok');
-        });
+        Store.load()
+          .then((loaded) => {
+            state = loaded;
+            showLoading(false);
+            hideLogin();
+            SubjectsView.init(App);
+            WeekView.init(App);
+            MonthView.init(App);
+            SettingsUI.init(App);
+            PushManager.init();
+            switchTab('subjects');
+            setSyncStatus(
+              state && state.source === 'offline'
+                ? 'offline'
+                : state && state.source === 'pending'
+                  ? 'pending'
+                  : 'ok'
+            );
+          })
+          .catch(() => {
+            // Nunca debería pasar (load() cae a la caché local), pero si algo
+            // falla no dejamos la app girando en "Conectando…".
+            showLoading(false);
+            if (typeof UI !== 'undefined' && UI.toast) {
+              UI.toast('No se pudo cargar la app. Volvé a entrar.', 'danger');
+            }
+          });
       } else {
         hideUserMenu();
         hideLoading();

@@ -6,6 +6,11 @@ const PushManager = (() => {
   const SW_PATH = 'firebase-messaging-sw.js';
   const TICK_MS = 30000;
   const WEEK_MS = 7 * 24 * 3600 * 1000;
+  // Ventana de catch-up: si la app estuvo en segundo plano (timers congelados
+  // por el sistema) al volver avisa igual, si pasó menos de 15 minutos.
+  const CATCH_UP_MS = 15 * 60 * 1000;
+  const NOTIFIED_KEY = 'app_calendario_notified';
+  const NOTIFIED_TTL = 7 * 24 * 3600 * 1000;
 
   let messaging = null;
   let swReg = null;
@@ -39,6 +44,13 @@ const PushManager = (() => {
     }
     syncState();
     schedule();
+
+    // Si el sistema congeló los timers (app en segundo plano / pantalla
+    // apagada), al volver se chequean los recordatorios pendientes al toque.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) tick();
+    });
+    window.addEventListener('focus', () => tick());
   }
 
   function bindToggle() {
@@ -125,6 +137,42 @@ const PushManager = (() => {
     }
   }
 
+  // ------------------------------------------------ recordatorios (local)
+
+  function notifiedMap() {
+    try {
+      return JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '{}') || {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function wasNotified(key, now) {
+    const ts = notifiedMap()[key];
+    return !!ts && now - ts <= NOTIFIED_TTL;
+  }
+
+  function markNotified(key, now) {
+    try {
+      const map = notifiedMap();
+      Object.keys(map).forEach((k) => {
+        if (now - map[k] > NOTIFIED_TTL) delete map[k];
+      });
+      map[key] = now;
+      localStorage.setItem(NOTIFIED_KEY, JSON.stringify(map));
+    } catch (err) {}
+  }
+
+  // Avisa solo una vez por recordatorio (la clave incluye el instante objetivo,
+  // así el recordatorio semanal de la semana que viene vuelve a sonar).
+  function tryNotify(key, title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const now = Date.now();
+    if (wasNotified(key, now)) return;
+    markNotified(key, now);
+    notifyUser(title, body);
+  }
+
   // Pide el permiso de notificaciones si hace falta (para recordatorios locales).
   async function ensurePermission() {
     if (typeof PwaInstall !== 'undefined' && PwaInstall.isIOS && PwaInstall.isIOS()) {
@@ -209,10 +257,14 @@ const PushManager = (() => {
       const at = nextWeeklyMs(w.notifyDay, w.notify);
       if (at == null) return;
       const prev = at - WEEK_MS;
-      if (prev <= now + 2000 && prev >= now - TICK_MS - 2000) {
+      if (prev <= now && prev >= now - CATCH_UP_MS) {
         const sub = App.getSubject(w.subjectId);
         const subName = sub ? sub.name : 'Sin materia';
-        notifyUser(subName, `Tenés ${TYPE_LABEL[w.type] || w.type} a las ${UI.pad(w.start)}:00.`);
+        tryNotify(
+          'w:' + w.id + ':' + prev,
+          subName,
+          `Tenés ${TYPE_LABEL[w.type] || w.type} a las ${UI.pad(w.start)}:00.`
+        );
       }
     });
 
@@ -221,8 +273,8 @@ const PushManager = (() => {
       if (!ev.notify || !ev.notifyDate) return;
       const at = eventAtMs(ev.notifyDate, ev.notify);
       if (at == null) return;
-      if (at <= now + 2000 && at >= now - TICK_MS - 2000) {
-        notifyUser(ev.title, `${UI.fmtDate(ev.notifyDate)} a las ${ev.notify}.`);
+      if (at <= now && at >= now - CATCH_UP_MS) {
+        tryNotify('e:' + ev.id + ':' + at, ev.title, `${UI.fmtDate(ev.notifyDate)} a las ${ev.notify}.`);
       }
     });
   }

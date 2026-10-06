@@ -263,7 +263,7 @@ const PushManager = (() => {
         tryNotify(
           'w:' + w.id + ':' + prev,
           subName,
-          `Tenés ${TYPE_LABEL[w.type] || w.type} a las ${UI.pad(w.start)}:00.`
+          `Tenés ${TYPE_LABEL[w.type] || w.type} a las ${UI.fmtHM(w.start)}.`
         );
       }
     });

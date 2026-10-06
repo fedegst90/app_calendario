@@ -24,20 +24,12 @@ const WeekView = (() => {
 
     const nDay = document.getElementById('week-notify-day');
     nDay.innerHTML = DAYS.map((d, i) => `<option value="${i}">${d}</option>`).join('');
+    // Desde/Hasta son inputs type="time" (minutos) definidos en index.html
+  }
 
-    const start = document.getElementById('week-start');
-    let opts = '';
-    for (let h = HOUR_START; h < HOUR_END; h++) {
-      opts += `<option value="${h}"${h === 8 ? ' selected' : ''}>${UI.pad(h)}:00</option>`;
-    }
-    start.innerHTML = opts;
-
-    const end = document.getElementById('week-end');
-    opts = '';
-    for (let h = HOUR_START + 1; h <= HOUR_END; h++) {
-      opts += `<option value="${h}"${h === 10 ? ' selected' : ''}>${UI.pad(h)}:00</option>`;
-    }
-    end.innerHTML = opts;
+  function defaultTimes() {
+    document.getElementById('week-start').value = '08:00';
+    document.getElementById('week-end').value = '10:00';
   }
 
   function fillSubjectSelect() {
@@ -58,6 +50,7 @@ const WeekView = (() => {
       editingId = null;
       document.getElementById('week-modal-title').textContent = 'Nuevo horario semanal';
       fillSubjectSelect();
+      defaultTimes();
       const daySel = document.getElementById('week-day');
       document.getElementById('week-notify-day').value = daySel.value;
       document.getElementById('week-notify').value = '';
@@ -70,8 +63,8 @@ const WeekView = (() => {
     document.getElementById('week-save').addEventListener('click', () => {
       const subjectId = document.getElementById('week-subject').value;
       const day = +document.getElementById('week-day').value;
-      const start = +document.getElementById('week-start').value;
-      const end = +document.getElementById('week-end').value;
+      const start = UI.parseHM(document.getElementById('week-start').value);
+      const end = UI.parseHM(document.getElementById('week-end').value);
       const type = document.getElementById('week-type').value;
       const notify = document.getElementById('week-notify').value || null;
       const notifyDay = notify ? +document.getElementById('week-notify-day').value : null;
@@ -79,6 +72,10 @@ const WeekView = (() => {
 
       if (!subjectId) {
         UI.alertDialog('Primero agregá una materia en la pestaña Materias.');
+        return;
+      }
+      if (start == null || end == null) {
+        UI.alertDialog('Completá la hora de inicio y la de fin.');
         return;
       }
       if (end <= start) {
@@ -175,7 +172,7 @@ const WeekView = (() => {
       </div>
       <ul class="list-unstyled mb-0">
         <li><i class="bi bi-calendar-week me-1"></i>Día: ${DAYS[item.day]}</li>
-        <li><i class="bi bi-clock me-1"></i>Horario: ${UI.pad(item.start)}:00 - ${UI.pad(item.end)}:00</li>
+        <li><i class="bi bi-clock me-1"></i>Horario: ${UI.fmtHM(item.start)} - ${UI.fmtHM(item.end)}</li>
         <li><i class="bi bi-tag me-1"></i>Tipo: ${TYPE_LABEL[item.type] || item.type}</li>
         ${item.notify ? `<li><i class="bi bi-bell me-1"></i>Recordatorio: ${item.notifyDay != null ? DAYS[item.notifyDay] : DAYS[item.day]} ${UI.esc(item.notify)}</li>` : ''}
       </ul>`;
@@ -193,8 +190,8 @@ const WeekView = (() => {
     fillSubjectSelect();
     document.getElementById('week-subject').value = item.subjectId;
     document.getElementById('week-day').value = String(item.day);
-    document.getElementById('week-start').value = String(item.start);
-    document.getElementById('week-end').value = String(item.end);
+    document.getElementById('week-start').value = UI.fmtHM(item.start);
+    document.getElementById('week-end').value = UI.fmtHM(item.end);
     document.getElementById('week-type').value = item.type;
     document.getElementById('week-notify').value = item.notify || '';
     document.getElementById('week-notify-day').value = item.notifyDay != null ? String(item.notifyDay) : String(item.day);
@@ -251,15 +248,16 @@ const WeekView = (() => {
         const sub = app.getSubject(w.subjectId);
         const color = sub ? sub.color : '#adb5bd';
         const name = sub ? sub.name : 'Sin materia';
-        const top = (w.start - HOUR_START) * HOUR_PX;
-        const height = (w.end - w.start) * HOUR_PX;
+        // start/end en minutos desde medianoche; la grilla es de 1 hora = HOUR_PX px
+        const top = Math.round(((w.start - HOUR_START * 60) / 60) * HOUR_PX);
+        const height = Math.max(1, Math.round(((w.end - w.start) / 60) * HOUR_PX));
         const pct = 100 / w._total;
         const left = w._col * pct;
         return `
         <div class="wk-block" data-wid="${w.id}"
              style="top:${top}px;height:${height}px;left:calc(${left}% + 2px);width:calc(${pct}% - 4px);background:${color};color:${UI.contrast(color)}">
           <div class="wk-block-title">${UI.esc(name)}</div>
-          <div class="wk-block-type">${TYPE_LABEL[w.type] || w.type} · ${UI.pad(w.start)}:00-${UI.pad(w.end)}:00</div>
+          <div class="wk-block-type">${TYPE_LABEL[w.type] || w.type} · ${UI.fmtHM(w.start)}-${UI.fmtHM(w.end)}</div>
           ${w.description ? `<div class="wk-block-desc" title="${UI.esc(w.description)}">${UI.esc(w.description)}</div>` : ''}
           ${w.notify ? `<div class="wk-block-notify"><i class="bi bi-bell-fill"></i> ${DAYS[w.notifyDay] || DAYS[w.day]} ${UI.esc(w.notify)}</div>` : ''}
         </div>`;

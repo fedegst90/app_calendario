@@ -17,6 +17,22 @@ const UI = {
     return String(n).padStart(2, '0');
   },
 
+  // Minutos desde medianoche → "HH:MM"
+  fmtHM(mins) {
+    const m = Math.max(0, Math.round(Number(mins) || 0));
+    return `${this.pad(Math.floor(m / 60) % 24)}:${this.pad(m % 60)}`;
+  },
+
+  // "HH:MM" → minutos desde medianoche (null si no es válido)
+  parseHM(str) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(str == null ? '' : str).trim());
+    if (!m) return null;
+    const h = +m[1];
+    const min = +m[2];
+    if (h > 23 || min > 59) return null;
+    return h * 60 + min;
+  },
+
   toISO(y, m, d) {
     return `${y}-${this.pad(m)}-${this.pad(d)}`;
   },

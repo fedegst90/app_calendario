@@ -116,6 +116,14 @@ const Store = (() => {
     return isFinite(n) ? n : 0;
   }
 
+  // Horario en minutos desde medianoche. Los datos viejos guardaban la hora
+  // entera (6..22): si viene en ese rango se asume que son horas y se pasa a
+  // minutos; lo nuevo ya llega en minutos (>= 6*60).
+  function mins(v) {
+    const n = num(v);
+    return n > 0 && n < 24 ? Math.round(n * 60) : Math.round(n);
+  }
+
   // RTDB almacena los arrays como objetos con claves numéricas (los guardamos
   // como mapas con la id de cada item); esto los reconvierte a arrays.
   function toArray(v) {
@@ -168,8 +176,8 @@ const Store = (() => {
           id: str(w.id),
           subjectId: str(w.subjectId),
           day: num(w.day),
-          start: num(w.start),
-          end: num(w.end),
+          start: mins(w.start),
+          end: mins(w.end),
           type: str(w.type) || 'clase',
           notify: wNotif,
           notifyDay: wNotif ? (w.notifyDay != null ? num(w.notifyDay) : num(w.day)) : null,

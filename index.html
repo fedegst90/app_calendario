@@ -75,7 +75,7 @@
               <button id="btn-notifications" class="btn btn-outline-light btn-sm d-none" title="Notificaciones">
                 <i class="bi bi-bell" id="btn-notifications-icon"></i><span class="btn-label">Notificaciones</span>
               </button>
-              <button id="btn-install" class="btn btn-outline-light btn-sm d-none" title="Instalar app">
+              <button id="btn-install" class="btn btn-outline-light btn-sm" title="Instalar app">
                 <i class="bi bi-download"></i><span class="btn-label">Instalar</span>
               </button>
               <div class="dropdown">
@@ -398,14 +398,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <p class="mb-3" id="install-modal-text">
-            Tocá <i class="bi bi-arrow-up-square text-secondary"></i> <strong>Compartir</strong> y elegí
-            <strong>Añadir a pantalla de inicio</strong>. Así se instala como una app nativa.
-          </p>
-          <ol class="small text-muted mb-0">
-            <li class="mb-1">Abrí la app desde el menú de <strong>Compartir</strong> de tu navegador.</li>
-            <li>Seleccioná <strong>Añadir a pantalla de inicio</strong>.</li>
-          </ol>
+          <p class="mb-3" id="install-modal-text"></p>
+          <ol class="small text-muted mb-0" id="install-modal-steps"></ol>
         </div>
         <div class="modal-footer">
           <button class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
